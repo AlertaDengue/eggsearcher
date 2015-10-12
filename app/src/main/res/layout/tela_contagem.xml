@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical">
+
+    <dinidiniz.eggsearcher.HScroll
+        android:layout_weight="1"
+        android:id="@+id/hScroll"
+        android:layout_width="fill_parent"
+        android:layout_height="0dp">
+
+        <dinidiniz.eggsearcher.VScroll
+            android:id="@+id/vScroll"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:id="@+id/captured_image"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"></LinearLayout>
+        </dinidiniz.eggsearcher.VScroll>
+    </dinidiniz.eggsearcher.HScroll>
+
+    <LinearLayout
+        android:id="@+id/telaContagem"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="#000000"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <CheckBox
+            android:id="@+id/erasorCheckBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="Erasor"/>
+
+        <Button
+            android:id="@+id/button_Thresholding"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="thresholdImageButton"
+            android:text="Thresholding" />
+    </LinearLayout>
+
+</LinearLayout>

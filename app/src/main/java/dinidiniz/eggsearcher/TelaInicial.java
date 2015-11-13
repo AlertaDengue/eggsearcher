@@ -19,12 +19,12 @@ public class TelaInicial extends AppCompatActivity {
     }
 
     public void tirarFoto(View view){
-        intent = new Intent(this,AtividadePrincipal.class);
+        intent = new Intent(this,TelaFotografia.class);
         startActivity(intent);
     }
 
     public void upload(View view){
-        Intent intent = new Intent(this, FilePicker.class);
+        Intent intent = new Intent(this, TelaFilePicker.class);
         startActivity(intent);
     }
 }

@@ -3,6 +3,12 @@
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
         <!-- Customize your theme here. -->
+        <item name="android:editTextColor">#000000</item>
+        <item name="android:imageButtonStyle">@style/MyButton</item>
+    </style>
+
+    <style name="MyButton" parent="Base.Widget.AppCompat.Button">
+        <item name="android:background">@drawable/botao</item>
     </style>
 
 </resources>

@@ -1,14 +1,11 @@
 package dinidiniz.eggsearcher;
 
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.hardware.Camera;
-import android.net.Uri;
-import android.os.Environment;
+//import android.hardware.camera2.*;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -16,30 +13,29 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.List;
 
 
-public class AtividadePrincipal extends AppCompatActivity {
+public class TelaFotografia extends AppCompatActivity {
 
     public final static String EXTRA_FILE_PATH = "file_path";
     private Camera mCamera;
     private CameraPreview mPreview;
     public static final int MEDIA_TYPE_IMAGE = 1;
-    String TAG = "AtividadePrincipal";
+    String TAG = "TelaFotografia";
     Intent intent;
     Bundle bundle;
     FrameLayout preview;
     String filename;
+    int maxWidth;
+    int maxHeight;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.atividade_principal);
+        setContentView(R.layout.tela_fotografia);
 
         startCamera();
     }
@@ -70,13 +66,28 @@ public class AtividadePrincipal extends AppCompatActivity {
             c = Camera.open(); // attempt to get a Camera instance
             Camera.Parameters params = c.getParameters();
             params.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
-            params.set("iso", "100");
+            params.setExposureCompensation(0);
             params.set("metering", "matrix");
             params.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+
+            // Check what resolutions are supported by your camera
+            List<Camera.Size> sizes = params.getSupportedPictureSizes();
+            Camera.Size mSize = sizes.get(0);
+
+            for (Camera.Size size : sizes) {
+                if (size.width * size.height > mSize.width * mSize.height) {
+                    Log.i("GetCameraInstance", "Available resolution: " + size.width + " " + size.height);
+                    mSize = size;
+                }
+            }
+
+            params.setPictureSize(mSize.width, mSize.height);
+
             c.setParameters(params);
         }
         catch (Exception e){
             // Camera is not available (in use or does not exist)
+            Log.i("GetCameraInstance", "Not Availible");
         }
         return c; // returns null if camera is unavailable
     }
@@ -107,8 +118,8 @@ public class AtividadePrincipal extends AppCompatActivity {
             mCamera.takePicture(null, null, mPicture);
             captureImage.setText("Next");
         } else{
-            releaseCamera();
             saveScreen();
+            releaseCamera();
             captureImage.setText("Capture");
             intent = new Intent(this, TelaContagem.class);
             startActivity(intent);
@@ -125,6 +136,16 @@ public class AtividadePrincipal extends AppCompatActivity {
         }
     }
 
+
+    @Override
+    protected void onStop(){
+        super.onStop();
+        if (mCamera != null) {
+            releaseCamera();              // release the camera immediately on pause event
+        }
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         if (mCamera == null) {
@@ -157,6 +178,9 @@ public class AtividadePrincipal extends AppCompatActivity {
     public void saveScreen(){
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor editor = sharedPref.edit();
+        Camera.Size sizeResolution = mCamera.getParameters().getPictureSize();
+        editor.putInt("widthResolution", sizeResolution.width);
+        editor.putInt("heightResolution", sizeResolution.height);
         editor.putString("imagepath", filename);
         editor.commit();
     }

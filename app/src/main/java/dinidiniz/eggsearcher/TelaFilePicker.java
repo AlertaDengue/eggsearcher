@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * Created by leon on 26/08/15.
  */
-public class FilePicker extends ListActivity {
+public class TelaFilePicker extends ListActivity {
 
     public final static String EXTRA_FILE_PATH = "file_path";
     public final static String EXTRA_SHOW_HIDDEN_FILES = "show_hidden_files";
@@ -151,7 +151,7 @@ public class FilePicker extends ListActivity {
                             DEFAULT_INITIAL_DIRECTORY = "/";
                         }
                     } catch (Exception e) {
-                        Log.i("FilePicker", e.toString());
+                        Log.i("TelaFilePicker", e.toString());
                     }
                     saveScreen();
                     startActivity(extra);
@@ -176,7 +176,7 @@ public class FilePicker extends ListActivity {
 
         public FilePickerListAdapter(Context context, List<File> objects) {
 
-            super(context, R.layout.list_item, android.R.id.text1, objects);
+            super(context, R.layout.tela_file_picker, android.R.id.text1, objects);
             mObjects = objects;
         }
 
@@ -190,7 +190,7 @@ public class FilePicker extends ListActivity {
                 LayoutInflater inflater = (LayoutInflater)
                         getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-                row = inflater.inflate(R.layout.list_item, parent, false);
+                row = inflater.inflate(R.layout.tela_file_picker, parent, false);
             }
             else
                 row = convertView;
@@ -273,6 +273,8 @@ public class FilePicker extends ListActivity {
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString("directory", DEFAULT_INITIAL_DIRECTORY);
         editor.putString("imagepath", filepath);
+        editor.putInt("widthResolution", 0);
+        editor.putInt("heightResolution", 0);
         editor.commit();
     }
 

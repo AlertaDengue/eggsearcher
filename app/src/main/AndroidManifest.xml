@@ -21,14 +21,15 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".AtividadePrincipal"
-            android:label="@string/app_name" >
+            android:name=".TelaFotografia"
+            android:label="Atividade Principal" >
         </activity>
         <activity
             android:name=".TelaContagem"
-            android:label="@string/app_name" >
+            android:label="Tela Contagem" >
         </activity>
-        <activity android:name=".FilePicker"/>
+        <activity android:name=".TelaFilePicker"/>
+        <activity android:name=".TelaResultado"  android:label="Tela Resultado"/>
     </application>
 
 </manifest>

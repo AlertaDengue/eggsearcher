@@ -1,4 +1,4 @@
-package dinidiniz.eggsearcher;
+package dinidiniz.eggsearcher.telas;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -12,30 +12,19 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.Point;
 import android.graphics.Rect;
-import android.graphics.drawable.Drawable;
-import android.opengl.GLES10;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.text.Layout;
-import android.text.TextUtils;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.ScrollView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
@@ -49,7 +38,6 @@ import org.opencv.android.Utils;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -57,7 +45,8 @@ import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
-import javax.microedition.khronos.opengles.GL10;
+
+import dinidiniz.eggsearcher.R;
 
 import static java.lang.Math.sqrt;
 
@@ -121,12 +110,13 @@ public class TelaContagem extends Activity {
 
     }
 
-
+    /*
     @Override
     protected void onRestart() {
         super.onRestart();
         linearLayout.removeView(drawView);
     }
+    */
 
 
     //Controls bar Moves and Eraser of Canvas
@@ -236,8 +226,10 @@ public class TelaContagem extends Activity {
     public void loadScreen() {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         filePath = sharedPref.getString("imagepath", "/");
-        int widthResolution = sharedPref.getInt("widthResolution", 0);
-        int heightResolution = sharedPref.getInt("heightResolution", 0);
+        bitmap = BitmapFactory.decodeFile(filePath);
+
+        int widthResolution = bitmap.getWidth();
+        int heightResolution =  bitmap.getHeight();
 
         int maxTextureSize = getMaxTextureSize();
 

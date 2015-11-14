@@ -1,4 +1,4 @@
-package dinidiniz.eggsearcher;
+package dinidiniz.eggsearcher.functions;
 
 import android.content.Context;
 import android.hardware.Camera;

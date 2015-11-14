@@ -1,4 +1,4 @@
-package dinidiniz.eggsearcher;
+package dinidiniz.eggsearcher.telas;
 
 import android.app.ListActivity;
 import android.content.Context;
@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+
+import dinidiniz.eggsearcher.R;
 
 /**
  * Created by leon on 26/08/15.
@@ -273,8 +275,6 @@ public class TelaFilePicker extends ListActivity {
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString("directory", DEFAULT_INITIAL_DIRECTORY);
         editor.putString("imagepath", filepath);
-        editor.putInt("widthResolution", 0);
-        editor.putInt("heightResolution", 0);
         editor.commit();
     }
 

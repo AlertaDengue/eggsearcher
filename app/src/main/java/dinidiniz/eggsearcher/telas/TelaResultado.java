@@ -1,4 +1,4 @@
-package dinidiniz.eggsearcher;
+package dinidiniz.eggsearcher.telas;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -6,17 +6,19 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.NumberPicker;
 import android.widget.TextView;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
+
+import dinidiniz.eggsearcher.R;
+import dinidiniz.eggsearcher.SQL.DBHelper;
 
 /**
  * Created by leon on 11/11/15.
@@ -32,6 +34,7 @@ public class TelaResultado extends Activity {
     Set<String> numberOfEggsSamples = new HashSet<String>(1);
     LinearLayout linearLayoutSamples;
     NumberPicker totalNumberOfEggsView;
+    DBHelper db;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -107,19 +110,35 @@ public class TelaResultado extends Activity {
         numberOfEggsSamples.add("" + numberOfEggs);
     }
 
-    public void saveScreen(String another){
+    public void saveScreenAnotherPicture(){
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor editor = sharedPref.edit();
-        if (!another.equals("another")) {
-            editor.putInt("sampleNumber", sampleNumber + 1);
-        } else {
-            editor.putStringSet("numberOfEggsSamples", numberOfEggsSamples);
-        }
+        editor.putStringSet("numberOfEggsSamples", numberOfEggsSamples);
         editor.commit();
     }
 
+    public void saveScreenResult(){
+        db = new DBHelper(this);
+        EditText codeResult = (EditText) findViewById(R.id.codeResult);
+        EditText descriptionResult = (EditText) findViewById(R.id.descriptionResult);
+        db.insertSample(codeResult.getText().toString(),totalNumberOfEggsView.getValue(),descriptionResult.getText().toString());
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putStringSet("numberOfEggsSamples", new HashSet<String>(1));
+        editor.commit();
+
+    }
+
     public void anotherPicture(View view){
-        saveScreen("another");
+        saveScreenAnotherPicture();
+        intent = new Intent(this,TelaInicial.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NO_HISTORY);
+        startActivity(intent);
+    }
+
+    public void saveResult(View view){
+        saveScreenResult();
         intent = new Intent(this,TelaInicial.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NO_HISTORY);
         startActivity(intent);

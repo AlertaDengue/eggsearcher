@@ -1,4 +1,4 @@
-package dinidiniz.eggsearcher;
+package dinidiniz.eggsearcher.functions;
 
 import android.graphics.Bitmap;
 import android.util.Log;

@@ -1,4 +1,4 @@
-package dinidiniz.eggsearcher;
+package dinidiniz.eggsearcher.scroll;
 
 import android.content.Context;
 import android.util.AttributeSet;

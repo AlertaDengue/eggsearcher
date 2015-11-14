@@ -5,13 +5,13 @@
     android:layout_height="fill_parent"
     android:orientation="vertical">
 
-    <dinidiniz.eggsearcher.HScroll
+    <dinidiniz.eggsearcher.scroll.HScroll
         android:layout_weight="1"
         android:id="@+id/hScroll"
         android:layout_width="fill_parent"
         android:layout_height="0dp">
 
-        <dinidiniz.eggsearcher.VScroll
+        <dinidiniz.eggsearcher.scroll.VScroll
             android:id="@+id/vScroll"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
@@ -21,8 +21,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="vertical"></LinearLayout>
-        </dinidiniz.eggsearcher.VScroll>
-    </dinidiniz.eggsearcher.HScroll>
+        </dinidiniz.eggsearcher.scroll.VScroll>
+    </dinidiniz.eggsearcher.scroll.HScroll>
 
     <LinearLayout
         android:id="@+id/telaContagem"

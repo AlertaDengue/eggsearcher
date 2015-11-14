@@ -1,4 +1,4 @@
-package dinidiniz.eggsearcher;
+package dinidiniz.eggsearcher.scroll;
 
 import android.widget.ScrollView;
 

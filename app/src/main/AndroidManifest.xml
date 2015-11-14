@@ -14,22 +14,23 @@
         android:icon="@drawable/icon"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
-        <activity android:name=".TelaInicial">
+        <activity android:name=".telas.TelaInicial">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
-            android:name=".TelaFotografia"
+            android:name=".telas.TelaFotografia"
             android:label="Atividade Principal" >
         </activity>
         <activity
-            android:name=".TelaContagem"
+            android:name=".telas.TelaContagem"
             android:label="Tela Contagem" >
         </activity>
-        <activity android:name=".TelaFilePicker"/>
-        <activity android:name=".TelaResultado"  android:label="Tela Resultado"/>
+        <activity android:name=".telas.TelaFilePicker"/>
+        <activity android:name=".telas.TelaResultado"  android:label="Tela Resultado"/>
+        <activity android:name=".telas.TelaHistorico"  android:label="Tela Historico"/>
     </application>
 
 </manifest>

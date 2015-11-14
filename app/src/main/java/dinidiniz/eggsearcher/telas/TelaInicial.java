@@ -1,9 +1,11 @@
-package dinidiniz.eggsearcher;
+package dinidiniz.eggsearcher.telas;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+
+import dinidiniz.eggsearcher.R;
 
 /**
  * Created by leon on 23/08/15.
@@ -25,6 +27,11 @@ public class TelaInicial extends AppCompatActivity {
 
     public void upload(View view){
         Intent intent = new Intent(this, TelaFilePicker.class);
+        startActivity(intent);
+    }
+
+    public void historic(View view){
+        Intent intent = new Intent(this, TelaHistorico.class);
         startActivity(intent);
     }
 }

@@ -1,4 +1,4 @@
-package dinidiniz.eggsearcher;
+package dinidiniz.eggsearcher.telas;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -17,6 +17,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 
+import dinidiniz.eggsearcher.functions.CameraPreview;
+import dinidiniz.eggsearcher.R;
+
 
 public class TelaFotografia extends AppCompatActivity {
 
@@ -29,8 +32,6 @@ public class TelaFotografia extends AppCompatActivity {
     Bundle bundle;
     FrameLayout preview;
     String filename;
-    int maxWidth;
-    int maxHeight;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -178,9 +179,6 @@ public class TelaFotografia extends AppCompatActivity {
     public void saveScreen(){
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor editor = sharedPref.edit();
-        Camera.Size sizeResolution = mCamera.getParameters().getPictureSize();
-        editor.putInt("widthResolution", sizeResolution.width);
-        editor.putInt("heightResolution", sizeResolution.height);
         editor.putString("imagepath", filename);
         editor.commit();
     }

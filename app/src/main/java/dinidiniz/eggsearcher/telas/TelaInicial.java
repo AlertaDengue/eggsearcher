@@ -34,4 +34,9 @@ public class TelaInicial extends AppCompatActivity {
         Intent intent = new Intent(this, TelaHistorico.class);
         startActivity(intent);
     }
+
+    public void configuracoes(View view){
+        Intent intent = new Intent(this, TelaConfiguracao.class);
+        startActivity(intent);
+    }
 }

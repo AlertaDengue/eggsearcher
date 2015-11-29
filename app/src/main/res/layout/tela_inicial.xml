@@ -40,7 +40,7 @@
         android:layout_weight="1"
         android:background="@drawable/botao"
         android:text="Settings"
-        android:onClick="upload">
+        android:onClick="configuracoes">
     </Button>
 
     <Button

@@ -7,6 +7,9 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /** A basic Camera preview class */
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
@@ -74,5 +77,43 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         } catch (Exception e){
             Log.d(TAG, "Error starting camera preview: " + e.getMessage());
         }
+    }
+
+    public static List<String> getCameraResolutionList(){
+        Camera c = Camera.open(); // attempt to get a Camera instance
+        Camera.Parameters params = c.getParameters();
+        List<Camera.Size> sizes = params.getSupportedPictureSizes();
+        List<Integer> resolutionSpinnerListInteger = new ArrayList<>();
+        for (Camera.Size singleSize:sizes){
+            resolutionSpinnerListInteger.add(singleSize.height * singleSize.width / 1024000);
+        }
+
+        Collections.sort(resolutionSpinnerListInteger, Collections.reverseOrder());
+
+        List<String> resolutionSpinnerList = new ArrayList<String>(resolutionSpinnerListInteger.size());
+        for (Integer myInt : resolutionSpinnerListInteger) {
+            resolutionSpinnerList.add(String.valueOf(myInt));
+        }
+
+        c.release();
+
+        return resolutionSpinnerList;
+    }
+
+    public static List<String> getCameraResolutionListWithSizes(List<Camera.Size> sizes){
+
+        List<Integer> resolutionSpinnerListInteger = new ArrayList<>();
+        for (Camera.Size singleSize:sizes){
+            resolutionSpinnerListInteger.add(singleSize.height * singleSize.width / 1024000);
+        }
+
+        Collections.sort(resolutionSpinnerListInteger, Collections.reverseOrder());
+
+        List<String> resolutionSpinnerList = new ArrayList<String>(resolutionSpinnerListInteger.size());
+        for (Integer myInt : resolutionSpinnerListInteger) {
+            resolutionSpinnerList.add(String.valueOf(myInt));
+        }
+
+        return resolutionSpinnerList;
     }
 }

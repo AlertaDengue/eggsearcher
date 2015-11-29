@@ -1,3 +1,7 @@
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:id="@+id/headHistorico"
@@ -6,7 +10,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:background="@drawable/border"
+        android:background="@drawable/edittextborder"
         android:layout_height="wrap_content">
 
         <TextView
@@ -47,3 +51,4 @@
     </LinearLayout>
 
 </LinearLayout>
+</ScrollView>

@@ -4,7 +4,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
+    android:background="@drawable/fundo"
     android:orientation="vertical">
 
     <ScrollView
@@ -49,10 +49,12 @@
                     android:textSize="21dp" />
 
                 <EditText
-                    android:maxLength="10"
+                    android:maxLength="14"
                     android:id="@+id/codeResult"
                     android:layout_width="fill_parent"
+                    android:hint="write a code here"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/edittextborder"
                     android:text=""
                     android:textSize="21dp" />
 
@@ -69,9 +71,11 @@
 
                 <EditText
                     android:padding="24dp"
+                    android:hint="write a description here"
                     android:id="@+id/descriptionResult"
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/edittextborder"
                     android:text=""
                     android:textSize="21dp" />
 
@@ -94,8 +98,10 @@
 
                 <NumberPicker
                     android:id="@+id/totalNumberOfEggs"
+                    android:background="@drawable/edittextborder"
+                    android:descendantFocusability="blocksDescendants"
                     android:layout_width="100dp"
-                    android:layout_height="wrap_content"></NumberPicker>
+                    android:layout_height="90dp"></NumberPicker>
 
             </LinearLayout>
 

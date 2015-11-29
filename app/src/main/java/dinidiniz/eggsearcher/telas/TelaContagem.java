@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -12,12 +13,14 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
@@ -25,6 +28,7 @@ import android.widget.CheckBox;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Toast;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
@@ -47,6 +51,7 @@ import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
 
 import dinidiniz.eggsearcher.R;
+import dinidiniz.eggsearcher.functions.CameraPreview;
 
 import static java.lang.Math.sqrt;
 
@@ -54,17 +59,23 @@ public class TelaContagem extends Activity {
 
     //Thouch Events variables
     private float mX, mY;
-    private float curX, curY;
+    float downX, downY;
+    float curX, curY;
     private ScrollView vScroll;
     private HorizontalScrollView hScroll;
     boolean started = false;
     CheckBox erasorCheckBox;
+    Point size;
 
     //Global variables to draw
     String filePath;
+    boolean isDrawingRec = false;
     DrawView drawView;
     int canvasHeight;
     int canvasWidth;
+    static final float TOUCH_TOLERANCE = 3;
+    long startTime;
+    long curTime;
 
 
     String TAG = "TelaContagem";
@@ -75,10 +86,16 @@ public class TelaContagem extends Activity {
     Bitmap bitmap;
 
     //Studied variables
-    int heightStudied = 8;
-    int heightOn = 16;
-    double meanU = 67.15 * (heightStudied / heightOn);
-    double standartDeviationU = 13.8862341907 * sqrt(heightStudied / heightOn);
+    int thresholdOn;
+    double resolutionOn;
+    int minimumThresholdArea = 10;
+    int heightStudied = 15;
+    int resolutionStudied = 12;
+    int meanUStudied = 15;
+    int standardDeviationStudied = 3;
+    int heightOn;
+    double meanU;
+    double standartDeviationU;
     int numberOfEggs = 0;
 
 
@@ -90,38 +107,38 @@ public class TelaContagem extends Activity {
         loadScreen();
 
 
+        //GET SCREEN SIZE
+        Display display = getWindowManager().getDefaultDisplay();
+        size = new Point();
+        display.getSize(size);
+
         //Control Scroll Views
         vScroll = (ScrollView) findViewById(R.id.vScroll);
         hScroll = (HorizontalScrollView) findViewById(R.id.hScroll);
         erasorCheckBox = (CheckBox) findViewById(R.id.erasorCheckBox);
 
-        //Make it install OpenCV
-        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_6, this, mLoaderCallback);
-
-        drawView = new DrawView(this);
-        //drawView.setDrawingCacheEnabled(true);
-
-        linearLayout = (LinearLayout) findViewById(R.id.captured_image);
-        drawView.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT));
-        linearLayout.addView(drawView, canvasWidth, canvasHeight);
-
+        //Make it sync OpenCV
+        if (!OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_2, this, mLoaderCallback))
+        {
+            Log.e("TEST", "Cannot connect to OpenCV Manager");
+        }
 
     }
 
-    /*
+
     @Override
-    protected void onRestart() {
-        super.onRestart();
-        linearLayout.removeView(drawView);
+    protected void onPause() {
+        super.onPause();
+        this.finish();
     }
-    */
+
 
 
     //Controls bar Moves and Eraser of Canvas
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+
+        boolean returnMoveEvent = true;
 
         if (erasorCheckBox.isChecked()) {
             switch (event.getAction() & MotionEvent.ACTION_MASK) {
@@ -149,24 +166,65 @@ public class TelaContagem extends Activity {
             switch (event.getAction()) {
 
                 case MotionEvent.ACTION_DOWN:
-                    mX = event.getX();
-                    mY = event.getY();
-                    return true;
+                    mX = (int) (event.getX() + hScroll.getScrollX());
+                    downX = (int) (event.getX() + hScroll.getScrollX());
+                    mY = (int) (event.getY() + vScroll.getScrollY());
+                    downY = (int) (event.getY() + vScroll.getScrollY());
+                    startTime = event.getEventTime();
+
+                    return returnMoveEvent;
+
                 case MotionEvent.ACTION_MOVE:
-                    curX = event.getX();
-                    curY = event.getY();
-                    if (started) {
-                        vScroll.scrollBy(0, (int) (mY - curY));
-                        hScroll.scrollBy((int) (mX - curX), 0);
+                    curX = (int) (event.getX() + hScroll.getScrollX());
+                    curY = (int) (event.getY() + vScroll.getScrollY());
+
+
+                    curTime = event.getEventTime();
+
+                    float dx = Math.abs(curX - downX);
+                    float dy = Math.abs(curY - downY);
+                    if (dx < TOUCH_TOLERANCE || dy < TOUCH_TOLERANCE||!isDrawingRec) {
+                            if (curTime - startTime > 2000) {
+                                isDrawingRec = true;
+                            }
+                        }
+
+
+                    if(!isDrawingRec) {
+                        if (started) {
+                            vScroll.scrollBy(0, (int) (mY - curY));
+                            hScroll.scrollBy((int) (mX - curX), 0);
+                        } else {
+                            started = returnMoveEvent;
+                        }
+                        mX = curX;
+                        mY = curY;
+                        return returnMoveEvent;
                     } else {
-                        started = true;
+                        drawView.toInvalidate();
+                        if((event.getX())/size.x > 0.9 || (event.getY())/size.y > 0.9 || (event.getX())/size.x < 0.1 ||(event.getY())/size.y < 0.1){
+                            vScroll.scrollBy(0, (int) (curY - mY));
+                            hScroll.scrollBy((int) (curX - mX), 0);
+                        }
+                        mX = curX;
+                        mY = curY;
                     }
-                    mX = curX;
-                    mY = curY;
-                    return true;
+
+                    return returnMoveEvent;
+
                 case MotionEvent.ACTION_UP:
+                    if(isDrawingRec){
+                        if (curX > bitmap.getWidth()) {curX = bitmap.getWidth();}
+                        if (curY > bitmap.getHeight()) {curY = bitmap.getHeight();}
+                        bitmap = Bitmap.createBitmap(bitmap, (int) downX, (int) downY, (int) (curX - downX), (int) (curY - downY));
+                        canvasWidth = (int) Math.abs(downX - curX);
+                        canvasHeight = (int) Math.abs(downY - curY);
+                        linearLayout.removeView(drawView);
+                        startDrawView();
+                    }
+                    isDrawingRec = false;
                     started = false;
-                    return true;
+                    return returnMoveEvent;
             }
         }
         return true;
@@ -186,8 +244,6 @@ public class TelaContagem extends Activity {
     public void saveScreen() {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor editor = sharedPref.edit();
-        String filename = getFileStreamPath("tempIMG2.png").getAbsolutePath();
-        editor.putString("imagepath", filename);
         editor.putInt("numberOfEggs", numberOfEggs);
         editor.commit();
     }
@@ -199,6 +255,9 @@ public class TelaContagem extends Activity {
             switch (status) {
                 case LoaderCallbackInterface.SUCCESS: {
                     Log.i(TAG, "OpenCV loaded successfully");
+
+                    startDrawView();
+
                 }
                 break;
                 default: {
@@ -208,6 +267,34 @@ public class TelaContagem extends Activity {
             }
         }
     };
+
+    public void startDrawView(){
+        drawView = new DrawView(this);
+
+        linearLayout = (LinearLayout) findViewById(R.id.captured_image);
+        drawView.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT));
+        linearLayout.addView(drawView, canvasWidth, canvasHeight);
+    }
+
+    //Resize Bitmap
+    public Bitmap getResizedBitmap(Bitmap bm, int newHeight, int newWidth) {
+
+        int widthImage = bm.getWidth();
+        int heightImage = bm.getHeight();
+
+
+        float scaleWidth = ((float) newWidth) / widthImage;
+        float scaleHeight = ((float) newHeight) / heightImage;
+
+
+        Matrix matrix = new Matrix();
+        matrix.postScale(scaleWidth, scaleHeight);
+        Bitmap resizedBitmap = Bitmap.createBitmap(bm, 0, 0, widthImage, heightImage, matrix, false);
+        return resizedBitmap;
+
+    }
 
     //Load the bitmap from the canvas view
     public Bitmap loadBitmapFromView(View v) {
@@ -220,13 +307,18 @@ public class TelaContagem extends Activity {
     }
 
     public double valueOfN(int m) {
-        return meanU / (standartDeviationU * (sqrt(m) + sqrt(m + 1)));
+        return Math.sqrt( m * (m + 1) /2 * Math.pow(standartDeviationU, 2) * (Math.log(m+1) - Math.log(m)) + m * (m + 1) * Math.pow(meanU, 2));
     }
 
-    public void loadScreen() {
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-        filePath = sharedPref.getString("imagepath", "/");
-        bitmap = BitmapFactory.decodeFile(filePath);
+    public Bitmap RotateBitmap(Bitmap source, float angle) {
+        Matrix matrix = new Matrix();
+        matrix.postRotate(angle);
+
+        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+    }
+
+    public Bitmap getBitmapFromFilePath(String filePath){
+        Bitmap bitmap = BitmapFactory.decodeFile(filePath);
 
         int widthResolution = bitmap.getWidth();
         int heightResolution =  bitmap.getHeight();
@@ -237,12 +329,53 @@ public class TelaContagem extends Activity {
 
         if (maxResolution > maxTextureSize) {
             double factor = maxResolution/maxTextureSize;
-            canvasWidth = (int) Math.floor(widthResolution/factor);
+            canvasWidth = (int) Math.floor(widthResolution / factor);
             canvasHeight = (int) Math.floor(heightResolution/factor);
         } else {
             canvasWidth = widthResolution;
             canvasHeight = heightResolution;
         }
+
+        if (filePath.equals(this.getFileStreamPath("tempIMG.png").getAbsolutePath())) {
+            bitmap = getResizedBitmap(bitmap, canvasHeight, canvasWidth);
+            bitmap = RotateBitmap(bitmap, 90);
+        } else if (filePath.equals(this.getFileStreamPath("tempIMG2.png").getAbsolutePath())) {
+        } else {
+            bitmap = getResizedBitmap(bitmap, canvasHeight, canvasWidth);
+        }
+
+        return bitmap;
+    }
+
+    public void loadScreen() {
+        Resources res = getResources();
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+
+        //GET PICTURE WITH FILEPATH AND PUT IT IN BITMAP AND GET THE RIGHT SIZES OF THE CANVAS
+        filePath = sharedPref.getString("imagepath", "/");
+        bitmap = getBitmapFromFilePath(filePath);
+
+        //GET HEIGHT OF THE PICTURE THAT WAS TAKEN
+        heightOn = sharedPref.getInt("heightFromLentsNumberPickerSelected", 12);
+
+        //GET THRESHOLD LEVEL SELECTED
+        int thresholdSpinnerSelected = sharedPref.getInt("thresholdSpinnerSelected", 0);
+        if (thresholdSpinnerSelected == 0) {
+            thresholdOn = 92;
+        } else {
+            String valueString = res.getStringArray(R.array.thresholdSpinnerList)[thresholdSpinnerSelected];
+            thresholdOn = Integer.parseInt(valueString);
+        }
+
+        //GET RESOLUTION OF THE PICTURE
+        resolutionOn = (double) canvasHeight * canvasWidth / 1024000;
+
+        double factorMultiplyer = (heightStudied / heightOn) * (resolutionOn/resolutionStudied);
+        meanU = meanUStudied * factorMultiplyer;
+        standartDeviationU = standardDeviationStudied * Math.sqrt(factorMultiplyer);
+        Log.i(TAG, "Mean stimated: " + meanU);
+        Log.i(TAG, "Standart deviation stimated: " + standartDeviationU);
+
     }
 
     //OTHER CLASSES NOW
@@ -291,7 +424,7 @@ public class TelaContagem extends Activity {
             Collections.sort(areasList);
             int cutNote;
             for (cutNote = 0; cutNote < areasList.size(); cutNote++) {
-                if (areasList.get(cutNote) < 15) {
+                if (areasList.get(cutNote) < minimumThresholdArea) {
                 } else {
                     break;
                 }
@@ -299,18 +432,22 @@ public class TelaContagem extends Activity {
 
             int m = 1;
             double soma = 0;
+            double deviation = 0;
             int numeroCaso = 0;
 
             for (int idy = cutNote; idy < areasList.size(); idy++) {
-                while (areasList.get(idy) > meanU * (m) + standartDeviationU * valueOfN(m) * sqrt(m)) {
+                while (areasList.get(idy) > valueOfN(m)) {
+                    Log.i(TAG, "Value of N: " + valueOfN(m));
                     m += 1;
                 }
                 numberOfEggs += m;
                 soma += areasList.get(idy);
+                deviation = Math.pow(areasList.get(idy), 2);
                 numeroCaso += 1;
             }
 
-            Log.i(TAG, soma / numeroCaso + "");
+            Log.i(TAG, "Mean: " + soma / numeroCaso);
+            Log.i(TAG, "Deviation: " + Math.pow(deviation/numeroCaso, ((float)1)/2));
             Log.i(TAG, numberOfEggs + "");
             return 1;
         }
@@ -353,29 +490,19 @@ public class TelaContagem extends Activity {
             Mat imgMat = new Mat();
             Mat threshold = new Mat();
             List<Mat> mRgb = new ArrayList<Mat>(3);
-            int pointA = 30;
+            int pointA = thresholdOn;
             int pointB = 10;
 
-            try {
-                fileOutStream = openFileOutput("tempIMG2.png", MODE_PRIVATE);
 
-                //Get Blue channel
-                Utils.bitmapToMat(bitmap, imgMat);
-                Core.split(imgMat, mRgb);
-                Mat mB = mRgb.get(0);
+            //Get Blue channel
+            Utils.bitmapToMat(bitmap, imgMat);
+            Core.split(imgMat, mRgb);
+            Mat mB = mRgb.get(0);
 
-                //Thresholding from pointA to pointB
-                Imgproc.threshold(mB, mB, pointA, 255, Imgproc.THRESH_TOZERO_INV);
-                Imgproc.threshold(mB, threshold, pointB, 255, Imgproc.THRESH_BINARY);
-
-                Utils.matToBitmap(threshold, bitmap);
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutStream);
-                fileOutStream.flush();
-                fileOutStream.close();
-                saveScreen();
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
-            }
+            //Thresholding from pointA to pointB
+            Imgproc.threshold(mB, mB, pointA, 255, Imgproc.THRESH_TOZERO_INV);
+            Imgproc.threshold(mB, threshold, pointB, 255, Imgproc.THRESH_BINARY);
+            Utils.matToBitmap(threshold, bitmap);
 
             return 1;
         }
@@ -390,16 +517,8 @@ public class TelaContagem extends Activity {
             //remove old view
             linearLayout.removeView(drawView);
 
-            //load again to gain new image
-            loadScreen();
-
             //Add new view
-            drawView = new DrawView(context);
-            drawView.setLayoutParams(new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.MATCH_PARENT));
-            linearLayout.addView(drawView, canvasWidth, canvasHeight);
-
+            startDrawView();
 
             //Change button
             thresholdingImageButton.setText("Count");
@@ -455,20 +574,18 @@ public class TelaContagem extends Activity {
 
         private Paint paint;
         private Context c;
+        Paint rPaint;
         private Path mPath;
-        private Path circlePath;
         Canvas canvas = null;
+        private Path circlePath;
         private int sizeOfErasor = 50;
         private String TAG = "DrawView";
         private float mX, mY;
-        private static final float TOUCH_TOLERANCE = 4;
 
         public DrawView(Context context) {
             super(context, null);
             init();
             c = context;
-            circlePath = new Path();
-            mPath = new Path();
 
         }
 
@@ -476,16 +593,12 @@ public class TelaContagem extends Activity {
             super(context, attrs, 0);
             init();
             c = context;
-            circlePath = new Path();
-            mPath = new Path();
         }
 
         public DrawView(Context context, AttributeSet attrs, int defStyle) {
             super(context, attrs, defStyle);
             init();
             c = context;
-            circlePath = new Path();
-            mPath = new Path();
         }
 
         private void init() {
@@ -496,6 +609,15 @@ public class TelaContagem extends Activity {
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeJoin(Paint.Join.ROUND);
             paint.setStrokeCap(Paint.Cap.ROUND);
+
+            circlePath = new Path();
+            mPath = new Path();
+
+            rPaint = new Paint();
+            rPaint.setColor(Color.WHITE);
+            rPaint.setStrokeWidth(3);
+            rPaint.setStyle(Paint.Style.STROKE);
+
 
         }
 
@@ -508,7 +630,7 @@ public class TelaContagem extends Activity {
             // TODO Auto-generated method stub
             super.onDraw(canvas);
 
-            Rect rectangle = new Rect(0, 0, canvasWidth, canvasHeight);
+            Rect rectangle = new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
             canvas.drawBitmap(bitmap, null, rectangle, null);
             canvas.translate(0, 0);
 
@@ -516,35 +638,12 @@ public class TelaContagem extends Activity {
 
             canvas.drawPath(circlePath, paint);
 
+            if(isDrawingRec){
+                canvas.drawRect(downX, downY, curX, curY, rPaint);
+            }
 
             canvas.save();
 
-        }
-
-        public Bitmap getResizedBitmap(String filePath, int newHeight, int newWidth) {
-
-            Bitmap bm = BitmapFactory.decodeFile(filePath);
-
-            int widthImage = bm.getWidth();
-            int heightImage = bm.getHeight();
-
-
-            float scaleWidth = ((float) newWidth) / widthImage;
-            float scaleHeight = ((float) newHeight) / heightImage;
-
-
-            Matrix matrix = new Matrix();
-            matrix.postScale(scaleWidth, scaleHeight);
-            Bitmap resizedBitmap = Bitmap.createBitmap(bm, 0, 0, widthImage, heightImage, matrix, false);
-            return resizedBitmap;
-
-        }
-
-        public Bitmap RotateBitmap(Bitmap source, float angle) {
-            Matrix matrix = new Matrix();
-            matrix.postRotate(angle);
-
-            return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
         }
 
 
@@ -579,21 +678,7 @@ public class TelaContagem extends Activity {
         protected void onSizeChanged(int w, int h, int oldw, int oldh) {
             super.onSizeChanged(w, h, oldw, oldh);
 
-
-            if (bitmap != null) {
-                bitmap.recycle();
-            }
-
             canvas = new Canvas();
-
-            if (filePath.equals(c.getFileStreamPath("tempIMG.png").getAbsolutePath())) {
-                bitmap = getResizedBitmap(filePath, canvasHeight, canvasWidth);
-                bitmap = RotateBitmap(bitmap, 90);
-            } else if (filePath.equals(c.getFileStreamPath("tempIMG2.png").getAbsolutePath())) {
-                bitmap = BitmapFactory.decodeFile(filePath);
-            } else {
-                bitmap = getResizedBitmap(filePath, canvasHeight, canvasWidth);
-            }
 
             canvas.setBitmap(bitmap.copy(Bitmap.Config.ALPHA_8, true));
         }

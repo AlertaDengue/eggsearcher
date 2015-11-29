@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -48,6 +49,8 @@ public class TelaResultado extends Activity {
         linearLayoutSamples = (LinearLayout) findViewById(R.id.samplesResults);
         LinearLayout.LayoutParams lParamsLinearLayout = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         LinearLayout.LayoutParams lParamsTextView = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams lParamsNumberPicker = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, (int) getResources().getDimension(R.dimen.number_picker_height));
+        LinearLayout.LayoutParams lParamsButton = new LinearLayout.LayoutParams((int) getResources().getDimension(R.dimen.button_width),(int) getResources().getDimension(R.dimen.button_width));
 
         for(String sample:numberOfEggsSamples) {
             LinearLayout linearLayoutSingleSample = new LinearLayout(this);
@@ -57,8 +60,7 @@ public class TelaResultado extends Activity {
             linearLayoutSingleSample.setPadding(24, 24, 24, 24);
 
             final Button destroyButton = new Button(this);
-            destroyButton.setWidth(50);
-            destroyButton.setHeight((int) getResources().getDimension(R.dimen.image_height));
+            destroyButton.setLayoutParams(lParamsButton);
             destroyButton.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     LinearLayout parent = (LinearLayout) v.getParent();
@@ -81,9 +83,11 @@ public class TelaResultado extends Activity {
             linearLayoutSingleSample.addView(textSingleSampleNumber);
 
             NumberPicker numberPickerSingleSample = new NumberPicker(this);
-            numberPickerSingleSample.setLayoutParams(lParamsTextView);
+            numberPickerSingleSample.setLayoutParams(lParamsNumberPicker);
             numberPickerSingleSample.setMaxValue(10000000);
             numberPickerSingleSample.setMinValue(0);
+            numberPickerSingleSample.setBackgroundResource(R.drawable.edittextborder);
+            numberPickerSingleSample.setDescendantFocusability(NumberPicker.FOCUS_BLOCK_DESCENDANTS);
             numberPickerSingleSample.setValue(Integer.parseInt(sample));
             linearLayoutSingleSample.addView(numberPickerSingleSample);
 
@@ -126,6 +130,15 @@ public class TelaResultado extends Activity {
 
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putStringSet("numberOfEggsSamples", new HashSet<String>(1));
+        editor.putInt("sampleNumber", sampleNumber + 1);
+        editor.commit();
+
+    }
+
+    public void saveScreenBackPress(){
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putStringSet("numberOfEggsSamples", new HashSet<String>(1));
         editor.commit();
 
     }
@@ -140,6 +153,13 @@ public class TelaResultado extends Activity {
     public void saveResult(View view){
         saveScreenResult();
         intent = new Intent(this,TelaInicial.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NO_HISTORY);
+        startActivity(intent);
+    }
+
+    public void onBackPressed() {
+        saveScreenBackPress();
+        intent = new Intent(this, TelaInicial.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NO_HISTORY);
         startActivity(intent);
     }

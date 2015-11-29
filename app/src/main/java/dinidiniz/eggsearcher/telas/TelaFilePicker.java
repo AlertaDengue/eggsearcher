@@ -35,6 +35,8 @@ public class TelaFilePicker extends ListActivity {
     public final static String EXTRA_ACCEPTED_FILE_EXTENSIONS = "accepted_file_extensions";
     String DEFAULT_INITIAL_DIRECTORY;
     String filepath;
+    private Intent intent;
+    private int processSpinnerSelected;
 
     protected File Directory;
     protected ArrayList<File> Files;
@@ -145,7 +147,12 @@ public class TelaFilePicker extends ListActivity {
                 if (extension.equals(".jpg") || extension.equals(".png")) {
                     Toast.makeText(this, "3...2...1...!", Toast.LENGTH_SHORT).show();
 
-                    Intent extra = new Intent(this, TelaContagem.class);
+                    if (processSpinnerSelected == 0){
+                        intent = new Intent(this, TelaContagem.class);
+                    } else {
+                        intent = new Intent(this, TelaFullAutomatic.class);
+                    }
+
                     try {
                         DEFAULT_INITIAL_DIRECTORY = newFile.getParentFile().getAbsolutePath();
                         ;
@@ -156,7 +163,7 @@ public class TelaFilePicker extends ListActivity {
                         Log.i("TelaFilePicker", e.toString());
                     }
                     saveScreen();
-                    startActivity(extra);
+                    startActivity(intent);
                 } else {
                     Toast.makeText(this, "Extension must be jpg or png", Toast.LENGTH_SHORT).show();
                 }
@@ -280,6 +287,7 @@ public class TelaFilePicker extends ListActivity {
 
     public void loadScreen(){
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        processSpinnerSelected = sharedPref.getInt("processSpinnerSelected", 0);
         DEFAULT_INITIAL_DIRECTORY = sharedPref.getString("directory", "/");
     }
 }

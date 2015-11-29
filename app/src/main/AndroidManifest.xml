@@ -29,8 +29,10 @@
             android:label="Tela Contagem" >
         </activity>
         <activity android:name=".telas.TelaFilePicker"/>
-        <activity android:name=".telas.TelaResultado"  android:label="Tela Resultado"/>
+        <activity android:name=".telas.TelaResultado"  android:label="Tela Resultado" />
         <activity android:name=".telas.TelaHistorico"  android:label="Tela Historico"/>
+        <activity android:name=".telas.TelaConfiguracao"  android:label="Tela Configuracao" />
+        <activity android:name=".telas.TelaFullAutomatic"  android:label="Tela Full Automatic"/>
     </application>
 
 </manifest>

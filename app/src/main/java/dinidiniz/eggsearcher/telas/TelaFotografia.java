@@ -32,11 +32,16 @@ public class TelaFotografia extends AppCompatActivity {
     Bundle bundle;
     FrameLayout preview;
     String filename;
+    private int processSpinnerSelected;
+    private int resolutionSpinnerSelected;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.tela_fotografia);
+
+
+        loadScreen();
 
         startCamera();
     }
@@ -46,7 +51,7 @@ public class TelaFotografia extends AppCompatActivity {
         } catch (Exception e) { Toast.makeText(this,"Capture your first image! :)", Toast.LENGTH_SHORT).show();}
 
         // Create an instance of Camera
-        mCamera = getCameraInstance();
+        getCameraInstance();
         if (mCamera == null) {
             Toast.makeText(this,"Camera not available", Toast.LENGTH_SHORT).show();
             onBackPressed();
@@ -61,36 +66,37 @@ public class TelaFotografia extends AppCompatActivity {
 
     /********************************************************/
     /** A safe way to get an instance of the Camera object. */
-    public static Camera getCameraInstance(){
-        Camera c = null;
+    public void getCameraInstance(){
+        mCamera = null;
         try {
-            c = Camera.open(); // attempt to get a Camera instance
-            Camera.Parameters params = c.getParameters();
+            mCamera = Camera.open(); // attempt to get a Camera instance
+            Camera.Parameters params = mCamera.getParameters();
             params.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
             params.setExposureCompensation(0);
             params.set("metering", "matrix");
-            params.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+            params.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
 
             // Check what resolutions are supported by your camera
             List<Camera.Size> sizes = params.getSupportedPictureSizes();
+            List<String> resolutionSpinnerList = CameraPreview.getCameraResolutionListWithSizes(sizes);
+
             Camera.Size mSize = sizes.get(0);
 
             for (Camera.Size size : sizes) {
-                if (size.width * size.height > mSize.width * mSize.height) {
-                    Log.i("GetCameraInstance", "Available resolution: " + size.width + " " + size.height);
+                if (resolutionSpinnerList.get(resolutionSpinnerSelected).equals("" + size.height * size.width / 1024000)) {
+                    Log.i("GetCameraInstance", "Resolution: " + size.width + " " + size.height);
                     mSize = size;
                 }
             }
 
             params.setPictureSize(mSize.width, mSize.height);
 
-            c.setParameters(params);
+            mCamera.setParameters(params);
         }
         catch (Exception e){
             // Camera is not available (in use or does not exist)
             Log.i("GetCameraInstance", "Not Availible");
         }
-        return c; // returns null if camera is unavailable
     }
 
     private Camera.PictureCallback mPicture = new Camera.PictureCallback() {
@@ -121,9 +127,14 @@ public class TelaFotografia extends AppCompatActivity {
         } else{
             saveScreen();
             releaseCamera();
+            if (processSpinnerSelected == 0){
+                intent = new Intent(this, TelaContagem.class);
+                startActivity(intent);
+            } else {
+                intent = new Intent(this, TelaFullAutomatic.class);
+                startActivity(intent);
+            }
             captureImage.setText("Capture");
-            intent = new Intent(this, TelaContagem.class);
-            startActivity(intent);
         }
 
     }
@@ -181,6 +192,12 @@ public class TelaFotografia extends AppCompatActivity {
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString("imagepath", filename);
         editor.commit();
+    }
+
+    public void loadScreen(){
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        processSpinnerSelected = sharedPref.getInt("processSpinnerSelected", 0);
+        resolutionSpinnerSelected = sharedPref.getInt("resolutionSpinnerSelected", 0);
     }
 
 }

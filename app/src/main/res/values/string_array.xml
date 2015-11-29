@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="thresholdSpinnerList">
+        <item>AUTOMATIC</item>
+        <item>160</item>
+        <item>140</item>
+        <item>120</item>
+        <item>100</item>
+        <item>80</item>
+    </string-array>
+
+    <string-array name="processSpinnerList">
+        <item>SEMI-AUTOMATIC</item>
+        <item>FULL-AUTOMATIC</item>
+    </string-array>
+
+</resources>

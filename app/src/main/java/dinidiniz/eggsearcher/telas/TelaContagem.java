@@ -34,8 +34,12 @@ import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfDouble;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.android.Utils;
 
@@ -52,6 +56,7 @@ import javax.microedition.khronos.egl.EGLDisplay;
 
 import dinidiniz.eggsearcher.R;
 import dinidiniz.eggsearcher.functions.CameraPreview;
+import dinidiniz.eggsearcher.functions.ConnectedComponentsLabelling;
 
 import static java.lang.Math.sqrt;
 
@@ -73,7 +78,7 @@ public class TelaContagem extends Activity {
     DrawView drawView;
     int canvasHeight;
     int canvasWidth;
-    static final float TOUCH_TOLERANCE = 3;
+    static final float TOUCH_TOLERANCE = 15;
     long startTime;
     long curTime;
 
@@ -88,11 +93,11 @@ public class TelaContagem extends Activity {
     //Studied variables
     int thresholdOn;
     double resolutionOn;
-    int minimumThresholdArea = 10;
-    int heightStudied = 15;
+    int heightStudied = 12;
     int resolutionStudied = 12;
-    int meanUStudied = 15;
-    int standardDeviationStudied = 3;
+    int meanUStudied = 200;
+    int standardDeviationStudied = 20;
+    int minimumThresholdArea = 100;
     int heightOn;
     double meanU;
     double standartDeviationU;
@@ -178,28 +183,24 @@ public class TelaContagem extends Activity {
                     curX = (int) (event.getX() + hScroll.getScrollX());
                     curY = (int) (event.getY() + vScroll.getScrollY());
 
-
-                    curTime = event.getEventTime();
-
-                    float dx = Math.abs(curX - downX);
-                    float dy = Math.abs(curY - downY);
-                    if (dx < TOUCH_TOLERANCE || dy < TOUCH_TOLERANCE||!isDrawingRec) {
-                            if (curTime - startTime > 2000) {
-                                isDrawingRec = true;
-                            }
-                        }
-
-
                     if(!isDrawingRec) {
                         if (started) {
+                            curTime = event.getEventTime();
+                            float dx = Math.abs(curX - downX);
+                            float dy = Math.abs(curY - downY);
+
+                            if (dx < TOUCH_TOLERANCE || dy < TOUCH_TOLERANCE || !isDrawingRec) {
+                                if (curTime - startTime > 1350) {
+                                    isDrawingRec = true;
+                                }
+                            }
+                            started = false;
+                        } else {
                             vScroll.scrollBy(0, (int) (mY - curY));
                             hScroll.scrollBy((int) (mX - curX), 0);
-                        } else {
-                            started = returnMoveEvent;
                         }
                         mX = curX;
                         mY = curY;
-                        return returnMoveEvent;
                     } else {
                         drawView.toInvalidate();
                         if((event.getX())/size.x > 0.9 || (event.getY())/size.y > 0.9 || (event.getX())/size.x < 0.1 ||(event.getY())/size.y < 0.1){
@@ -214,16 +215,25 @@ public class TelaContagem extends Activity {
 
                 case MotionEvent.ACTION_UP:
                     if(isDrawingRec){
-                        if (curX > bitmap.getWidth()) {curX = bitmap.getWidth();}
-                        if (curY > bitmap.getHeight()) {curY = bitmap.getHeight();}
-                        bitmap = Bitmap.createBitmap(bitmap, (int) downX, (int) downY, (int) (curX - downX), (int) (curY - downY));
-                        canvasWidth = (int) Math.abs(downX - curX);
-                        canvasHeight = (int) Math.abs(downY - curY);
-                        linearLayout.removeView(drawView);
-                        startDrawView();
+                        float dxNew = curX - downX;
+                        float dyNew = curY - downY;
+
+                        if (dxNew > TOUCH_TOLERANCE && dyNew > TOUCH_TOLERANCE) {
+                            if (curX > bitmap.getWidth()) {
+                                curX = bitmap.getWidth();
+                            }
+                            if (curY > bitmap.getHeight()) {
+                                curY = bitmap.getHeight();
+                            }
+                            bitmap = Bitmap.createBitmap(loadBitmapFromView(drawView), (int) downX, (int) downY, (int) (curX - downX), (int) (curY - downY));
+                            canvasWidth = (int) Math.abs(downX - curX);
+                            canvasHeight = (int) Math.abs(downY - curY);
+                            linearLayout.removeView(drawView);
+                            startDrawView();
+                        }
                     }
                     isDrawingRec = false;
-                    started = false;
+                    started = true;
                     return returnMoveEvent;
             }
         }
@@ -401,6 +411,9 @@ public class TelaContagem extends Activity {
         protected Integer doInBackground(Void... params) {
             List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
             Mat imgMat = new Mat();
+            Mat labelImage;
+            Mat stats = new Mat();
+            Mat centroids = new Mat();
             List<Double> areasList = new ArrayList<Double>();
 
             publishProgress("Thresholding");
@@ -409,15 +422,22 @@ public class TelaContagem extends Activity {
             Imgproc.threshold(imgMat, imgMat, 127, 255, Imgproc.THRESH_BINARY);
             //thresholdingImage2(bitmap);
 
+            System.out.println(Core.VERSION);
+
             publishProgress("Labelling connected components");
-            Imgproc.findContours(imgMat, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_NONE);
+
+            Imgproc.findContours(imgMat, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
 
             publishProgress("Counting areas");
+
+
             for (int idx = 0; idx < contours.size(); idx++) {
                 Mat contour = contours.get(idx);
                 double contourarea = Imgproc.contourArea(contour);
-                areasList.add(contourarea);
+                areasList.add(contourarea*3 + 10);
             }
+
+
 
 
             publishProgress("Finishing");
@@ -434,6 +454,7 @@ public class TelaContagem extends Activity {
             double soma = 0;
             double deviation = 0;
             int numeroCaso = 0;
+            String areas = "";
 
             for (int idy = cutNote; idy < areasList.size(); idy++) {
                 while (areasList.get(idy) > valueOfN(m)) {
@@ -442,9 +463,12 @@ public class TelaContagem extends Activity {
                 }
                 numberOfEggs += m;
                 soma += areasList.get(idy);
+                areas += ", " + areasList.get(idy);
                 deviation = Math.pow(areasList.get(idy), 2);
                 numeroCaso += 1;
             }
+
+            Log.i(TAG, "List: " + areas);
 
             Log.i(TAG, "Mean: " + soma / numeroCaso);
             Log.i(TAG, "Deviation: " + Math.pow(deviation/numeroCaso, ((float)1)/2));
@@ -499,9 +523,23 @@ public class TelaContagem extends Activity {
             Core.split(imgMat, mRgb);
             Mat mB = mRgb.get(0);
 
+            //SET TRESHOLD VALUE
+
+            MatOfDouble mu = new MatOfDouble();
+            MatOfDouble sigma = new MatOfDouble();
+
+            Core.meanStdDev(mB, mu, sigma);
+
+            Log.i(TAG, "Mean of Red Channel: " + mu.get(0,0)[0]);
+
+
             //Thresholding from pointA to pointB
             Imgproc.threshold(mB, mB, pointA, 255, Imgproc.THRESH_TOZERO_INV);
             Imgproc.threshold(mB, threshold, pointB, 255, Imgproc.THRESH_BINARY);
+            Imgproc.dilate(threshold, threshold, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3)));
+            Imgproc.erode(threshold, threshold, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3)));
+
+
             Utils.matToBitmap(threshold, bitmap);
 
             return 1;
@@ -581,6 +619,7 @@ public class TelaContagem extends Activity {
         private int sizeOfErasor = 50;
         private String TAG = "DrawView";
         private float mX, mY;
+        private Rect rectangle = new Rect(0, 0, canvasWidth, canvasHeight);
 
         public DrawView(Context context) {
             super(context, null);
@@ -630,7 +669,6 @@ public class TelaContagem extends Activity {
             // TODO Auto-generated method stub
             super.onDraw(canvas);
 
-            Rect rectangle = new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
             canvas.drawBitmap(bitmap, null, rectangle, null);
             canvas.translate(0, 0);
 
@@ -653,16 +691,13 @@ public class TelaContagem extends Activity {
         }
 
         private void touch_move(float x, float y) {
-            float dx = Math.abs(x - mX);
-            float dy = Math.abs(y - mY);
-            if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
-                mX = x;
-                mY = y;
-                mPath.lineTo(x, y);
+            mX = x;
+            mY = y;
+            mPath.lineTo(x, y);
 
-                circlePath.reset();
-                circlePath.addCircle(mX, mY, sizeOfErasor, Path.Direction.CW);
-            }
+            circlePath.reset();
+            circlePath.addCircle(x, y, sizeOfErasor, Path.Direction.CW);
+
         }
 
         private void touch_up() {

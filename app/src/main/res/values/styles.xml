@@ -4,6 +4,7 @@
     <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="android:editTextStyle">@style/MyEditText</item>
+        <item name="colorAccent">@android:color/holo_green_dark</item>
     </style>
 
     <style name="MyEditText" parent="Base.Widget.AppCompat.EditText">

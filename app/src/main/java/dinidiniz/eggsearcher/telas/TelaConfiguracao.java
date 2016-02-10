@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
 import android.widget.NumberPicker;
 import android.widget.Spinner;
 
@@ -33,6 +34,8 @@ public class TelaConfiguracao extends Activity{
     private int heightFromLentsNumberPickerSelected;
     private int resolutionSpinnerSelected;
     private Resources res;
+    private CheckBox flashCheckBox;
+    private Boolean flashChackBoxSelected;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -93,6 +96,7 @@ public class TelaConfiguracao extends Activity{
         heightFromLentsNumberPicker.setMinValue(8);
         heightFromLentsNumberPicker.setValue(heightFromLentsNumberPickerSelected);
 
+
     }
 
     @Override
@@ -116,7 +120,7 @@ public class TelaConfiguracao extends Activity{
         thresholdSpinnerSelected = sharedPref.getInt("thresholdSpinnerSelected", 0);
         processSpinnerSelected = sharedPref.getInt("processSpinnerSelected", 0);
         resolutionSpinnerSelected = sharedPref.getInt("resolutionSpinnerSelected", 0);
-        heightFromLentsNumberPickerSelected = sharedPref.getInt("heightFromLentsNumberPickerSelected", 15);
+        heightFromLentsNumberPickerSelected = sharedPref.getInt("heightFromLentsNumberPickerSelected", 12);
     }
 
 }

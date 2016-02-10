@@ -15,6 +15,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.media.ExifInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -346,15 +347,50 @@ public class TelaContagem extends Activity {
             canvasHeight = heightResolution;
         }
 
-        if (filePath.equals(this.getFileStreamPath("tempIMG.png").getAbsolutePath())) {
-            bitmap = getResizedBitmap(bitmap, canvasHeight, canvasWidth);
-            bitmap = RotateBitmap(bitmap, 90);
-        } else if (filePath.equals(this.getFileStreamPath("tempIMG2.png").getAbsolutePath())) {
-        } else {
-            bitmap = getResizedBitmap(bitmap, canvasHeight, canvasWidth);
-        }
+
+        bitmap = getResizedBitmap(bitmap, canvasHeight, canvasWidth);
+        bitmap = RotateBitmap(bitmap, getRightAngleImage(filePath));
 
         return bitmap;
+    }
+
+
+    private int getRightAngleImage(String photoPath) {
+
+        int degree = 0;
+        try {
+            ExifInterface ei = new ExifInterface(photoPath);
+            int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+
+            switch (orientation) {
+                case ExifInterface.ORIENTATION_NORMAL:
+                    degree = 0;
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_90:
+                    degree = 90;
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_180:
+                    degree = 180;
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_270:
+                    degree = 270;
+                    break;
+                case ExifInterface.ORIENTATION_UNDEFINED:
+                    degree = 0;
+                    break;
+                default:
+                    degree = 90;
+            }
+
+            Log.i(TAG, "degree to turn photo:" + (degree + 90));
+
+            return degree + 90;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return degree;
     }
 
     public void loadScreen() {

@@ -14,4 +14,10 @@
         <item>FULL-AUTOMATIC</item>
     </string-array>
 
+    <string-array name="namePhotoSpinnerList">
+        <item>BOX</item>
+        <item>OUT</item>
+        <item>TEMP</item>
+    </string-array>
+
 </resources>

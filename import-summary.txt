@@ -75,6 +75,10 @@ so manually move them:
 * javadoc/org/opencv/core/package-frame.html
 * javadoc/org/opencv/core/package-summary.html
 * javadoc/org/opencv/core/package-tree.html
+* javadoc/org/opencv/engine/
+* javadoc/org/opencv/engine/package-frame.html
+* javadoc/org/opencv/engine/package-summary.html
+* javadoc/org/opencv/engine/package-tree.html
 * javadoc/org/opencv/features2d/
 * javadoc/org/opencv/features2d/DescriptorExtractor.html
 * javadoc/org/opencv/features2d/DescriptorMatcher.html
@@ -83,10 +87,16 @@ so manually move them:
 * javadoc/org/opencv/features2d/package-frame.html
 * javadoc/org/opencv/features2d/package-summary.html
 * javadoc/org/opencv/features2d/package-tree.html
+* javadoc/org/opencv/imgcodecs/
+* javadoc/org/opencv/imgcodecs/Imgcodecs.html
+* javadoc/org/opencv/imgcodecs/package-frame.html
+* javadoc/org/opencv/imgcodecs/package-summary.html
+* javadoc/org/opencv/imgcodecs/package-tree.html
 * javadoc/org/opencv/imgproc/
 * javadoc/org/opencv/imgproc/CLAHE.html
 * javadoc/org/opencv/imgproc/Imgproc.html
 * javadoc/org/opencv/imgproc/LineSegmentDetector.html
+* javadoc/org/opencv/imgproc/Moments.html
 * javadoc/org/opencv/imgproc/Subdiv2D.html
 * javadoc/org/opencv/imgproc/package-frame.html
 * javadoc/org/opencv/imgproc/package-summary.html
@@ -150,12 +160,18 @@ so manually move them:
 * javadoc/org/opencv/video/package-frame.html
 * javadoc/org/opencv/video/package-summary.html
 * javadoc/org/opencv/video/package-tree.html
+* javadoc/org/opencv/videoio/
+* javadoc/org/opencv/videoio/VideoCapture.html
+* javadoc/org/opencv/videoio/VideoWriter.html
+* javadoc/org/opencv/videoio/Videoio.html
+* javadoc/org/opencv/videoio/package-frame.html
+* javadoc/org/opencv/videoio/package-summary.html
+* javadoc/org/opencv/videoio/package-tree.html
 * javadoc/overview-frame.html
 * javadoc/overview-summary.html
 * javadoc/overview-tree.html
 * javadoc/package-list
-* javadoc/resources/
-* javadoc/resources/inherit.gif
+* javadoc/script.js
 * javadoc/serialized-form.html
 * javadoc/stylesheet.css
 
@@ -164,11 +180,11 @@ Moved Files:
 Android Gradle projects use a different directory structure than ADT
 Eclipse projects. Here's how the projects were restructured:
 
-* AndroidManifest.xml => openCVLibrary300/src/main/AndroidManifest.xml
-* lint.xml => openCVLibrary300/lint.xml
-* res/ => openCVLibrary300/src/main/res/
-* src/ => openCVLibrary300/src/main/java/
-* src/org/opencv/engine/OpenCVEngineInterface.aidl => openCVLibrary300/src/main/aidl/org/opencv/engine/OpenCVEngineInterface.aidl
+* AndroidManifest.xml => openCVLibrary310/src/main/AndroidManifest.xml
+* lint.xml => openCVLibrary310/lint.xml
+* res/ => openCVLibrary310/src/main/res/
+* src/ => openCVLibrary310/src/main/java/
+* src/org/opencv/engine/OpenCVEngineInterface.aidl => openCVLibrary310/src/main/aidl/org/opencv/engine/OpenCVEngineInterface.aidl
 
 Next Steps:
 -----------

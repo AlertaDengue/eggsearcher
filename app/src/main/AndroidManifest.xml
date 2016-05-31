@@ -12,27 +12,31 @@
     <application
         android:allowBackup="true"
         android:icon="@drawable/icon"
+        android:largeHeap="true"
+        android:hardwareAccelerated="false"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
-        <activity android:name=".telas.TelaInicial">
+        <activity android:name=".activity.TelaInicial">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
-            android:name=".telas.TelaFotografia"
+            android:name=".activity.TelaFotografia"
             android:label="Atividade Principal" >
         </activity>
         <activity
-            android:name=".telas.TelaContagem"
+            android:name=".activity.TelaContagem"
             android:label="Tela Contagem" >
         </activity>
-        <activity android:name=".telas.TelaFilePicker"/>
-        <activity android:name=".telas.TelaResultado"  android:label="Tela Resultado" />
-        <activity android:name=".telas.TelaHistorico"  android:label="Tela Historico"/>
-        <activity android:name=".telas.TelaConfiguracao"  android:label="Tela Configuracao" />
-        <activity android:name=".telas.TelaFullAutomatic"  android:label="Tela Full Automatic"/>
+        <activity android:name=".activity.TelaFilePicker"/>
+        <activity android:name=".activity.TelaResultado"  android:label="Tela Resultado" />
+        <activity android:name=".activity.TelaHistoricoCal"  android:label="Tela Histórico Cal" />
+        <activity android:name=".activity.CalibrateActivity"  android:label="Calibrate" />
+        <activity android:name=".activity.TelaHistorico"  android:label="Tela Historico"/>
+        <activity android:name=".activity.TelaConfiguracao"  android:label="Tela Configuracao" />
+        <activity android:name=".activity.TelaFullAutomatic"  android:label="Tela Full Automatic"/>
     </application>
 
 </manifest>

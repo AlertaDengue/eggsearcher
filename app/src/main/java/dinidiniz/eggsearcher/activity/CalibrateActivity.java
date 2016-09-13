@@ -3,6 +3,7 @@ package dinidiniz.eggsearcher.activity;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
@@ -13,28 +14,26 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.media.ExifInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v7.app.AlertDialog;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Display;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
-import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDouble;
 import org.opencv.core.MatOfPoint;
@@ -76,6 +75,16 @@ public class CalibrateActivity extends Activity {
     FileOutputStream fileOutStream;
     Bitmap bitmapOriginal;
     Bitmap bitmap;
+    //Variables to zoom in and out
+    PointF last = new PointF();
+    PointF start = new PointF();
+    //Studied variables
+    int thresholdOn;
+    double resolutionOn;
+    int heightOn;
+    double meanU;
+    double standartDeviationU;
+    int numberOfEggs = 0;
     private int photoHeight;
     private int photoWidth;
     private Mat imgMat;
@@ -87,23 +96,15 @@ public class CalibrateActivity extends Activity {
     private int endColum;
     private int endRow;
     private MatOfPoint matContour;
-
     //Layout Variables
     private LinearLayout questionTabLayout;
     private LinearLayout linearLayout;
     private Button buttonYes;
     private Button buttonNo;
-
-
-    //Studied variables
-    int thresholdOn;
-    double resolutionOn;
-    int heightOn;
-    double meanU;
-    double standartDeviationU;
-    int numberOfEggs = 0;
-
-
+    private int startColumZoom;
+    private int startRowZoom;
+    private int endColumZoom;
+    private int endRowZoom;
     //Global variables of Thresholding
     private List<MatOfPoint> contours;
     private int pointContour = 0;
@@ -209,11 +210,93 @@ public class CalibrateActivity extends Activity {
         }
 
     }
+
     @Override
     protected void onPause() {
         super.onPause();
         this.finish();
     }
+
+    /***
+     * Function to control the zoom in or zoom out
+     *
+     * @param event
+     * @return true to continue event
+     */
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                Log.i(TAG, "down");
+                start.set(event.getX(), event.getY());
+                last.set(start);
+                break;
+            case MotionEvent.ACTION_MOVE:
+
+                int delta = (int) (last.y - event.getY());
+                //If the courser moved down direction
+                //If starts after will start at the the start
+                if (startColumZoom - delta < startColum) {
+                    if (startColumZoom - delta < 0) {
+                        startColumZoom = 0;
+                    } else {
+                        startColumZoom = startColumZoom - delta;
+                    }
+                } else {
+                    startColumZoom = startColum;
+                }
+
+                //If ends early will end at it was ending in the first place
+                if (endColumZoom + 2*delta > endColum - startColum) {
+                    if (startColumZoom + endColumZoom + 2*delta > canvasWidth){
+                        endColumZoom = canvasWidth -startColumZoom;
+                    } else {
+                        endColumZoom = endColumZoom + 2*delta;
+                    }
+                } else {
+                    endColumZoom = endColum - startColum;
+                }
+
+                //If starts after will start at the the start
+                if (startRowZoom - delta < startRow) {
+                    if (startRowZoom - delta < 0){
+                        startRowZoom = 0;
+                    } else {
+                        startRowZoom = startRowZoom - delta;
+                    }
+                } else {
+                    startRowZoom = startRow;
+                }
+
+                //If ends early will end at it was ending in the first place
+                if (endRowZoom + 2*delta > endRow - startRow) {
+                    if (startRowZoom + endRowZoom + 2*delta > canvasHeight){
+                        endRowZoom = canvasHeight -startRowZoom;
+                    } else {
+                        endRowZoom = endRowZoom + 2*delta;
+                    }
+                } else {
+                    endRowZoom = endRow - startRow;
+                }
+
+
+                //get bitmap
+                bitmap = null;
+                bitmap = Bitmap.createBitmap(bitmapOriginal, startColumZoom, startRowZoom, endColumZoom, endRowZoom);
+                bitmap = getResizedBitmap(bitmap, photoHeight, photoWidth);
+
+                //Restart drawView
+                drawView.invalidate();
+
+                last.set(event.getX(), event.getY());
+                break;
+            case MotionEvent.ACTION_UP:
+                Log.i(TAG, "Pointer down");
+                break;
+        }
+        return true;
+    }
+
 
     public void saveScreen() {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
@@ -272,9 +355,9 @@ public class CalibrateActivity extends Activity {
 
     public Bitmap getBitmapFromFilePath(String filePath) {
         Bitmap bitmap = BitmapFactory.decodeFile(filePath);
-
         int widthResolution = bitmap.getWidth();
         int heightResolution = bitmap.getHeight();
+        Log.i(TAG, "bitmap width: " + widthResolution + " ;bitmap height: " + heightResolution);
 
         int maxTextureSize = getMaxTextureSize();
 
@@ -334,6 +417,21 @@ public class CalibrateActivity extends Activity {
         return degree;
     }
 
+    private void goBacktoInitialScreen(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("That was the last egg in the picture that our system detected")
+                .setCancelable(false)
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        //do things
+                        intent = new Intent(CalibrateActivity.this, TelaInicial.class);
+                        startActivity(intent);
+                        CalibrateActivity.this.finish();
+                    }
+                });
+        AlertDialog alert = builder.create();
+        alert.show();
+    }
 
     public int goToNext() {
 
@@ -343,12 +441,16 @@ public class CalibrateActivity extends Activity {
         int right = 0;
         int bottom = 0;
         if (pointContour < contours.size()) {
-            while (Imgproc.contourArea(contours.get(pointContour)) < 100) {
+            while (Imgproc.contourArea(contours.get(pointContour)) < 5) {
                 pointContour += 1;
                 if (pointContour >= contours.size()) {
+                    goBacktoInitialScreen();
                     return 1;
                 }
             }
+
+
+
 
             matContour = contours.get(pointContour);
 
@@ -363,17 +465,17 @@ public class CalibrateActivity extends Activity {
             int sumLeft = 2;
             int sumRight = 5;
             int sumTop = 2;
-            int sumBottom = 4*sumTop;
+            int sumBottom = 4 * sumTop;
 
             startColum = left - sumLeft;
             startRow = top - sumTop;
-            endColum =  left - sumLeft + rect.width + 2*sumLeft;
+            endColum = left - sumLeft + rect.width + 2 * sumLeft;
             endRow = top - sumTop + rect.height + sumBottom;
 
             if (left < sumLeft) {
                 sumLeft = left;
             }
-            if (top < sumTop){
+            if (top < sumTop) {
                 sumTop = top;
             }
 
@@ -381,15 +483,23 @@ public class CalibrateActivity extends Activity {
                 sumRight = canvasWidth - right;
             }
 
-            if (canvasHeight - bottom < sumBottom){
+            if (canvasHeight - bottom < sumBottom) {
                 sumBottom = canvasHeight - bottom;
             }
 
-            if (startColum < 0){
+            if (endColum > canvasWidth){
+                endColum = canvasWidth;
+            }
+
+            if(endRow > canvasHeight){
+                endRow = canvasHeight;
+            }
+
+            if (startColum < 0) {
                 startColum = 0;
             }
 
-            if (startRow < 0){
+            if (startRow < 0) {
                 startRow = 0;
             }
 
@@ -401,8 +511,16 @@ public class CalibrateActivity extends Activity {
 
             Utils.matToBitmap(imgMatPerimeter, bitmapOriginal);
 
-            Log.i(TAG,"startColum: " + startColum + " ;startRow: " + " ;endColum: " + (endColum - startColum) + " ;endRow: " +  (endRow - startRow));
+            Log.i(TAG, "startColum: " + startColum + " ;startRow: " + startRow + " ;endColum: " + (endColum - startColum) + " ;endRow: " + (endRow - startRow));
 
+
+            //Put start to the zoom as well
+            startColumZoom = startColum;
+            startRowZoom = startRow;
+            endColumZoom = endColum - startColum;
+            endRowZoom = endRow - startRow;
+
+            //Create bitmap of the part of the original bitmap interested and than zoom in
             bitmap = null;
             bitmap = Bitmap.createBitmap(bitmapOriginal, startColum, startRow, endColum - startColum, endRow - startRow);
             bitmap = getResizedBitmap(bitmap, photoHeight, photoWidth);
@@ -413,11 +531,13 @@ public class CalibrateActivity extends Activity {
             //Add new view
             startDrawView();
 
+
+
         }
         return 1;
     }
 
-    public void addToDataIsEgg(boolean answer){
+    public void addToDataIsEgg(boolean answer) {
         //DRAW ALL POLYGON
         ArrayList<List<Integer>> pixels = new ArrayList<List<Integer>>();
         imgMat = new Mat(imgMatOriginal.rows(), imgMatOriginal.cols(), imgMatOriginal.type());
@@ -432,8 +552,8 @@ public class CalibrateActivity extends Activity {
         Log.i(TAG, "Area total: " + ((endRow - startRow) * (endColum - startColum)));
         Log.i(TAG, "Stimated area: " + Imgproc.contourArea(matContour));
 
-        for (int i= startRow; i< endRow;i++){
-            for (int j= startColum; j< endColum;j++){
+        for (int i = startRow; i < endRow; i++) {
+            for (int j = startColum; j < endColum; j++) {
                 //Log.i(TAG, "entrou");
                 if (imgMat.get(i, j)[0] == 255) {
                     List<Integer> pixel = new ArrayList<Integer>();
@@ -441,7 +561,7 @@ public class CalibrateActivity extends Activity {
                     pixel.add((int) pixelOriginal[0]);
                     pixel.add((int) pixelOriginal[1]);
                     pixel.add((int) pixelOriginal[2]);
-                    if (answer){
+                    if (answer) {
                         pixel.add(1);
                     } else {
                         pixel.add(0);
@@ -459,11 +579,11 @@ public class CalibrateActivity extends Activity {
         Imgproc.approxPolyDP(new_mat, approxCurve_temp, matContour.total() * 0.05, true);
 
         int isConvex = 0;
-        if (Imgproc.isContourConvex(matContour)){
+        if (Imgproc.isContourConvex(matContour)) {
             isConvex = 1;
         }
 
-        if (answer){
+        if (answer) {
             dbHelper.insertAllPixels(pixels);
             dbHelper.insertContour(isConvex, (int) matContour.total(), area,
                     (int) approxCurve_temp.total(), 1
@@ -653,7 +773,7 @@ public class CalibrateActivity extends Activity {
 
 
         }
-        
+
 
         @Override
         protected void onDraw(Canvas canvas) {

@@ -25,7 +25,7 @@ public class TelaHistoricoCal extends AppCompatActivity {
         final ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonHistoricalCal);
 
 
-        HistoricCal adapterHistoric = new HistoricCal(dbHelper.getAllPixeis(), this);
+        HistoricCal adapterHistoric = new HistoricCal(dbHelper.getAllPixeis().get(DBHelper.EGGS_IN_PIXEL_TABLE), this);
         listView.setAdapter(adapterHistoric);
 
         toggleButton.setOnClickListener(new View.OnClickListener() {
@@ -35,7 +35,7 @@ public class TelaHistoricoCal extends AppCompatActivity {
                     HistoricCal adapterHistoric = new HistoricCal(dbHelper.getAllContour(), TelaHistoricoCal.this);
                     listView.setAdapter(adapterHistoric);
                 } else {
-                    HistoricCal adapterHistoric = new HistoricCal(dbHelper.getAllPixeis(), TelaHistoricoCal.this);
+                    HistoricCal adapterHistoric = new HistoricCal(dbHelper.getAllPixeis().get(DBHelper.EGGS_IN_PIXEL_TABLE), TelaHistoricoCal.this);
                     listView.setAdapter(adapterHistoric);
                 }
             }

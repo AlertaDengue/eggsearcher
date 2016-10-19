@@ -33,17 +33,18 @@ import android.widget.ScrollView;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils;
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDouble;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.android.Utils;
 
 import java.io.FileOutputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import javax.microedition.khronos.egl.EGL10;
@@ -55,34 +56,26 @@ import dinidiniz.eggsearcher.R;
 
 public class TelaContagem extends Activity {
 
-    //Thouch Events variables
-    private float mX, mY;
+    static final float TOUCH_TOLERANCE = 15;
     float downX, downY;
     float curX, curY;
-    private ScrollView vScroll;
-    private HorizontalScrollView hScroll;
     boolean started = false;
     CheckBox erasorCheckBox;
     Point size;
-
     //Global variables to draw
     String filePath;
     boolean isDrawingRec = false;
     DrawView drawView;
     int canvasHeight;
     int canvasWidth;
-    static final float TOUCH_TOLERANCE = 15;
     long startTime;
     long curTime;
-
-
     String TAG = "TelaContagem";
     LinearLayout linearLayout;
     Button thresholdingImageButton;
     Intent intent;
     FileOutputStream fileOutStream;
     Bitmap bitmap;
-
     //Studied variables
     int thresholdOn;
     double resolutionOn;
@@ -90,19 +83,84 @@ public class TelaContagem extends Activity {
     int resolutionStudied = 12;
     int meanUStudied = 200;
     int standardDeviationStudied = 20;
-    int minimumThresholdArea = 100;
+    int minimumThresholdArea = 25;
     int heightOn;
     double meanU;
     double standartDeviationU;
     int numberOfEggs = 0;
+    double[] weights = {1, 1, 1, 1, 1};
+    //Thouch Events variables
+    private float mX, mY;
+    private ScrollView vScroll;
+    private HorizontalScrollView hScroll;
+    private int meanBChannel;
+    //Start OpenCV and download if necessary
+    private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
+        @Override
+        public void onManagerConnected(int status) {
+            switch (status) {
+                case LoaderCallbackInterface.SUCCESS: {
+                    Log.i(TAG, "OpenCV loaded successfully");
 
+                    //Load to get canvaswidth and canvasheight
+                    loadScreen();
+
+                    startDrawView();
+
+                }
+                break;
+                default: {
+                    super.onManagerConnected(status);
+                }
+                break;
+            }
+        }
+    };
+
+    //GET TEXTURE SIZE
+    public static int getMaxTextureSize() {
+        // Safe minimum default size
+        final int IMAGE_MAX_BITMAP_DIMENSION = 2048;
+
+        // Get EGL Display
+        EGL10 egl = (EGL10) EGLContext.getEGL();
+        EGLDisplay display = egl.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY);
+
+        // Initialise
+        int[] version = new int[2];
+        egl.eglInitialize(display, version);
+
+        // Query total number of configurations
+        int[] totalConfigurations = new int[1];
+        egl.eglGetConfigs(display, null, 0, totalConfigurations);
+
+        // Query actual list configurations
+        EGLConfig[] configurationsList = new EGLConfig[totalConfigurations[0]];
+        egl.eglGetConfigs(display, configurationsList, totalConfigurations[0], totalConfigurations);
+
+        int[] textureSize = new int[1];
+        int maximumTextureSize = 0;
+
+        // Iterate through all the configurations to located the maximum texture size
+        for (int i = 0; i < totalConfigurations[0]; i++) {
+            // Only need to check for width since opengl textures are always squared
+            egl.eglGetConfigAttrib(display, configurationsList[i], EGL10.EGL_MAX_PBUFFER_WIDTH, textureSize);
+
+            // Keep track of the maximum texture size
+            if (maximumTextureSize < textureSize[0])
+                maximumTextureSize = textureSize[0];
+        }
+
+        // Release
+        egl.eglTerminate(display);
+
+        // Return largest texture size found, or default
+        return Math.max(maximumTextureSize, IMAGE_MAX_BITMAP_DIMENSION);
+    }
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.tela_contagem);
-
-        //Load to get canvaswidth and canvasheight
-        loadScreen();
 
 
         //GET SCREEN SIZE
@@ -116,21 +174,17 @@ public class TelaContagem extends Activity {
         erasorCheckBox = (CheckBox) findViewById(R.id.erasorCheckBox);
 
         //Make it sync OpenCV
-        if (!OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_2, this, mLoaderCallback))
-        {
+        if (!OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_2, this, mLoaderCallback)) {
             Log.e("TEST", "Cannot connect to OpenCV Manager");
         }
 
     }
-
 
     @Override
     protected void onPause() {
         super.onPause();
         this.finish();
     }
-
-
 
     //Controls bar Moves and Eraser of Canvas
     @Override
@@ -176,7 +230,7 @@ public class TelaContagem extends Activity {
                     curX = (int) (event.getX() + hScroll.getScrollX());
                     curY = (int) (event.getY() + vScroll.getScrollY());
 
-                    if(!isDrawingRec) {
+                    if (!isDrawingRec) {
                         if (started) {
                             curTime = event.getEventTime();
                             float dx = Math.abs(curX - downX);
@@ -196,7 +250,7 @@ public class TelaContagem extends Activity {
                         mY = curY;
                     } else {
                         drawView.toInvalidate();
-                        if((event.getX())/size.x > 0.9 || (event.getY())/size.y > 0.9 || (event.getX())/size.x < 0.1 ||(event.getY())/size.y < 0.1){
+                        if ((event.getX()) / size.x > 0.9 || (event.getY()) / size.y > 0.9 || (event.getX()) / size.x < 0.1 || (event.getY()) / size.y < 0.1) {
                             vScroll.scrollBy(0, (int) (curY - mY));
                             hScroll.scrollBy((int) (curX - mX), 0);
                         }
@@ -207,7 +261,7 @@ public class TelaContagem extends Activity {
                     return returnMoveEvent;
 
                 case MotionEvent.ACTION_UP:
-                    if(isDrawingRec){
+                    if (isDrawingRec) {
                         float dxNew = curX - downX;
                         float dyNew = curY - downY;
 
@@ -234,7 +288,6 @@ public class TelaContagem extends Activity {
 
     }
 
-
     public void thresholdImageButton(View view) {
         thresholdingImageButton = (Button) findViewById(R.id.button_Thresholding);
         if (thresholdingImageButton.getText().toString().equals("Thresholding")) {
@@ -251,27 +304,7 @@ public class TelaContagem extends Activity {
         editor.commit();
     }
 
-    //Start OpenCV and download if necessary
-    private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
-        @Override
-        public void onManagerConnected(int status) {
-            switch (status) {
-                case LoaderCallbackInterface.SUCCESS: {
-                    Log.i(TAG, "OpenCV loaded successfully");
-
-                    startDrawView();
-
-                }
-                break;
-                default: {
-                    super.onManagerConnected(status);
-                }
-                break;
-            }
-        }
-    };
-
-    public void startDrawView(){
+    public void startDrawView() {
         drawView = new DrawView(this);
 
         linearLayout = (LinearLayout) findViewById(R.id.captured_image);
@@ -302,7 +335,7 @@ public class TelaContagem extends Activity {
     //Load the bitmap from the canvas view
     public Bitmap loadBitmapFromView(View v) {
 
-        Bitmap b = Bitmap.createBitmap( v.getLayoutParams().width, v.getLayoutParams().height, Bitmap.Config.ARGB_8888);
+        Bitmap b = Bitmap.createBitmap(v.getLayoutParams().width, v.getLayoutParams().height, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(b);
         v.layout(v.getLeft(), v.getTop(), v.getRight(), v.getBottom());
         v.draw(c);
@@ -310,7 +343,7 @@ public class TelaContagem extends Activity {
     }
 
     public double valueOfN(int m) {
-        return Math.sqrt( m * (m + 1) /2 * Math.pow(standartDeviationU, 2) * (Math.log(m+1) - Math.log(m)) + m * (m + 1) * Math.pow(meanU, 2));
+        return Math.sqrt(m * (m + 1) / 2 * Math.pow(standartDeviationU, 2) * (Math.log(m + 1) - Math.log(m)) + m * (m + 1) * Math.pow(meanU, 2));
     }
 
     public Bitmap RotateBitmap(Bitmap source, float angle) {
@@ -320,20 +353,20 @@ public class TelaContagem extends Activity {
         return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
     }
 
-    public Bitmap getBitmapFromFilePath(String filePath){
+    public Bitmap getBitmapFromFilePath(String filePath) {
         Bitmap bitmap = BitmapFactory.decodeFile(filePath);
 
         int widthResolution = bitmap.getWidth();
-        int heightResolution =  bitmap.getHeight();
+        int heightResolution = bitmap.getHeight();
 
         int maxTextureSize = getMaxTextureSize();
 
-        double maxResolution = (double) Math.max(widthResolution,heightResolution);
+        double maxResolution = (double) Math.max(widthResolution, heightResolution);
 
         if (maxResolution > maxTextureSize) {
-            double factor = maxResolution/maxTextureSize;
+            double factor = maxResolution / maxTextureSize;
             canvasWidth = (int) Math.floor(widthResolution / factor);
-            canvasHeight = (int) Math.floor(heightResolution/factor);
+            canvasHeight = (int) Math.floor(heightResolution / factor);
         } else {
             canvasWidth = widthResolution;
             canvasHeight = heightResolution;
@@ -345,7 +378,6 @@ public class TelaContagem extends Activity {
 
         return bitmap;
     }
-
 
     private int getRightAngleImage(String photoPath) {
 
@@ -385,38 +417,58 @@ public class TelaContagem extends Activity {
         return degree;
     }
 
+    //OTHER CLASSES NOW
+
     public void loadScreen() {
         Resources res = getResources();
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
 
+        //GET LOGISTIC WEIGHTS
+        weights[0] = Double.longBitsToDouble(sharedPref.getLong(TelaConfiguracao.WEIGHT_LOGISTIC_R, 1));
+        weights[1] = Double.longBitsToDouble(sharedPref.getLong(TelaConfiguracao.WEIGHT_LOGISTIC_G, 1));
+        weights[2] = Double.longBitsToDouble(sharedPref.getLong(TelaConfiguracao.WEIGHT_LOGISTIC_B, 1));
+        weights[3] = Double.longBitsToDouble(sharedPref.getLong(TelaConfiguracao.WEIGHT_LOGISTIC_GRAY, 1));
+        weights[4] = Double.longBitsToDouble(sharedPref.getLong(TelaConfiguracao.WEIGHT_LOGISTIC_MEANB, 1));
+
         //GET PICTURE WITH FILEPATH AND PUT IT IN BITMAP AND GET THE RIGHT SIZES OF THE CANVAS
         filePath = sharedPref.getString("imagepath", "/");
         bitmap = getBitmapFromFilePath(filePath);
+
+        //Get mean of U channel of the bitmap
+        Mat imgMat = new Mat();
+        Utils.bitmapToMat(bitmap, imgMat);
+
+        List<Mat> mRgb = new ArrayList<Mat>(3);
+        Core.split(imgMat, mRgb);
+        Mat mB = mRgb.get(2);
+
+        MatOfDouble mu = new MatOfDouble();
+        MatOfDouble sigma = new MatOfDouble();
+        Imgproc.threshold(mB, mB, 180, 255, Imgproc.THRESH_TOZERO_INV);
+        Core.meanStdDev(mB, mu, sigma, mB);
+        meanBChannel = (int) mu.get(0, 0)[0];
+
+        Log.i(TAG, "mean of B channel: " + meanBChannel);
 
         //GET HEIGHT OF THE PICTURE THAT WAS TAKEN
         heightOn = sharedPref.getInt("heightFromLentsNumberPickerSelected", 12);
 
         //GET THRESHOLD LEVEL SELECTED
         int thresholdSpinnerSelected = sharedPref.getInt("thresholdSpinnerSelected", 0);
-        if (thresholdSpinnerSelected == 0) {
-            thresholdOn = 92;
-        } else {
-            String valueString = res.getStringArray(R.array.thresholdSpinnerList)[thresholdSpinnerSelected];
-            thresholdOn = Integer.parseInt(valueString);
-        }
+        String valueString = res.getStringArray(R.array.thresholdSpinnerList)[thresholdSpinnerSelected];
+        thresholdOn = Integer.parseInt(valueString);
+
 
         //GET RESOLUTION OF THE PICTURE
         resolutionOn = (double) canvasHeight * canvasWidth / 1024000;
 
-        double factorMultiplyer = (heightStudied / heightOn) * (resolutionOn/resolutionStudied);
+        double factorMultiplyer = (heightStudied / heightOn) * (resolutionOn / resolutionStudied);
         meanU = meanUStudied * factorMultiplyer;
         standartDeviationU = standardDeviationStudied * Math.sqrt(factorMultiplyer);
         Log.i(TAG, "Mean stimated: " + meanU);
         Log.i(TAG, "Standart deviation stimated: " + standartDeviationU);
 
     }
-
-    //OTHER CLASSES NOW
 
     //PUBLIC CLASS TO COUNT THE EGGS IN A DIFFERENT THREAD
     public class contagemThread extends AsyncTask<Void, String, Integer> {
@@ -439,15 +491,12 @@ public class TelaContagem extends Activity {
         protected Integer doInBackground(Void... params) {
             List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
             Mat imgMat = new Mat();
-            Mat labelImage;
-            Mat stats = new Mat();
-            Mat centroids = new Mat();
-            List<Double> areasList = new ArrayList<Double>();
+            double areaTotal = 0;
 
             publishProgress("Thresholding");
             Utils.bitmapToMat(bitmap, imgMat);
             Imgproc.cvtColor(imgMat, imgMat, Imgproc.COLOR_RGB2GRAY);
-            Imgproc.threshold(imgMat, imgMat, 127, 255, Imgproc.THRESH_BINARY);
+            Imgproc.threshold(imgMat, imgMat, 250, 255, Imgproc.THRESH_BINARY);
             //thresholdingImage2(bitmap);
 
             System.out.println(Core.VERSION);
@@ -460,47 +509,27 @@ public class TelaContagem extends Activity {
 
 
             for (int idx = 0; idx < contours.size(); idx++) {
-                Mat contour = contours.get(idx);
-                double contourarea = Imgproc.contourArea(contour);
-                areasList.add(contourarea*3 + 10);
+                //Mat contour = contours.get(idx);
+                Mat countour = org.opencv.core.Mat.zeros(imgMat.rows(), imgMat.cols(), imgMat.type());
+                // CV_FILLED fills the connected components found
+                Imgproc.drawContours(countour, contours, idx, new Scalar(1), -1);
+                double countourArea = Core.sumElems(countour).val[0];
+                //org.opencv.core.Rect cRect = Imgproc.boundingRect(contours.get(idx));
+                //Mat contour = Imgproc.dilate(cRect);
+                //double contourarea = Imgproc.contourArea(contour);
+                countour.release();
+                if (countourArea > minimumThresholdArea) {
+                    areaTotal += countourArea;
+                }
             }
 
+            numberOfEggs = (int) Math.exp(0.6055 * Math.log(areaTotal) -0.1108 * Math.log(meanBChannel));
 
+            Log.i(TAG, "area total: " + areaTotal);
 
 
             publishProgress("Finishing");
-            Collections.sort(areasList);
-            int cutNote;
-            for (cutNote = 0; cutNote < areasList.size(); cutNote++) {
-                if (areasList.get(cutNote) < minimumThresholdArea) {
-                } else {
-                    break;
-                }
-            }
 
-            int m = 1;
-            double soma = 0;
-            double deviation = 0;
-            int numeroCaso = 0;
-            String areas = "";
-
-            for (int idy = cutNote; idy < areasList.size(); idy++) {
-                while (areasList.get(idy) > valueOfN(m)) {
-                    Log.i(TAG, "Value of N: " + valueOfN(m));
-                    m += 1;
-                }
-                numberOfEggs += m;
-                soma += areasList.get(idy);
-                areas += ", " + areasList.get(idy);
-                deviation = Math.pow(areasList.get(idy), 2);
-                numeroCaso += 1;
-            }
-
-            Log.i(TAG, "List: " + areas);
-
-            Log.i(TAG, "Mean: " + soma / numeroCaso);
-            Log.i(TAG, "Deviation: " + Math.pow(deviation/numeroCaso, ((float)1)/2));
-            Log.i(TAG, numberOfEggs + "");
             return 1;
         }
 
@@ -541,34 +570,104 @@ public class TelaContagem extends Activity {
 
             Mat imgMat = new Mat();
             Mat threshold = new Mat();
+            Mat mGrayscale = new Mat();
             List<Mat> mRgb = new ArrayList<Mat>(3);
             int pointA = thresholdOn;
-            int pointB = 10;
+            int pointB = 5;
 
 
-            //Get Blue channel
+            //Get each channel
             Utils.bitmapToMat(bitmap, imgMat);
             Core.split(imgMat, mRgb);
-            Mat mB = mRgb.get(0);
+            Mat mR = mRgb.get(0);
+            Mat mG = mRgb.get(1);
+            Mat mB = mRgb.get(2);
 
-            //SET TRESHOLD VALUE
 
-            MatOfDouble mu = new MatOfDouble();
-            MatOfDouble sigma = new MatOfDouble();
-
-            Core.meanStdDev(mB, mu, sigma);
-
-            Log.i(TAG, "Mean of Red Channel: " + mu.get(0,0)[0]);
+            Imgproc.cvtColor(imgMat, mGrayscale, Imgproc.COLOR_RGB2GRAY);
 
 
             //Thresholding from pointA to pointB
-            Imgproc.threshold(mB, mB, pointA, 255, Imgproc.THRESH_TOZERO_INV);
-            Imgproc.threshold(mB, threshold, pointB, 255, Imgproc.THRESH_BINARY);
-            Imgproc.dilate(threshold, threshold, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3)));
-            Imgproc.erode(threshold, threshold, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3)));
+            Imgproc.threshold(mR, mR, pointA, 255, Imgproc.THRESH_TOZERO_INV);
+            Imgproc.threshold(mR, threshold, pointB, 255, Imgproc.THRESH_BINARY);
 
 
-            Utils.matToBitmap(threshold, bitmap);
+            //Start OVer everything
+            mR = mRgb.get(0);
+            mG = mRgb.get(1);
+            mB = mRgb.get(2);
+
+            Mat ones = org.opencv.core.Mat.ones(mR.rows(), mR.cols(), CvType.CV_64FC1);
+            Scalar alpha = new Scalar(meanBChannel, CvType.CV_64FC1);
+            Core.multiply(ones, alpha, ones);
+
+
+            publishProgress("Analysing each pixel");
+            /*
+            int rows = mR.rows();
+            int cols = mR.cols();
+            int type = imgMat.type();
+            Mat newMat = new Mat(rows,cols, CvType.CV_8UC1);
+            int n = 0;
+
+            for(int r=0; r<rows; r++){
+                for(int c=0; c<cols; c++){
+                    double[] pixel = imgMat.get(r,c);
+                    double redPixel = pixel[0];
+                    double greenPixel = pixel[1];
+                    double bluePixel = pixel[2];
+                    double gray = redPixel * 0.299 + greenPixel * 0.587 + bluePixel * 0.114;
+                    double logisticResult = weights[0] * redPixel + weights[1] * greenPixel + weights[2] * bluePixel
+                            + weights[3] * gray + weights[4] * meanBChannel;
+
+                    if (logisticResult > 0) {
+                        logisticResult = 255;
+                    } else {
+                        logisticResult = 0;
+                    }
+
+                    if (n%100000 == 0) {
+                        Log.i(TAG, "result = " + logisticResult);
+                        Log.i(TAG, "" + weights[0] + " " +   " " + weights[1] + " " + weights[2] + " "
+                                + weights[3] + " " + weights[4]);
+                    }
+                    n += 1;
+                    newMat.put(r, c, logisticResult);
+                }
+            }
+
+
+            */
+
+
+            Mat[] matArrays = {mR, mG, mB, mGrayscale, ones};
+
+            for (int i = 0; i < matArrays.length; i++) {
+                matArrays[i].convertTo(matArrays[i], CvType.CV_64FC1);
+                alpha = new Scalar(weights[i], CvType.CV_64FC1);
+                Core.multiply(matArrays[i], alpha, matArrays[i]);
+            }
+
+            Core.add(matArrays[0], matArrays[1], matArrays[1]);
+            Core.add(matArrays[1], matArrays[2], matArrays[2]);
+            Core.add(matArrays[2], matArrays[3], matArrays[3]);
+            Core.add(matArrays[3], matArrays[4], matArrays[4]);
+
+            Mat zeros = org.opencv.core.Mat.zeros(mR.rows(), mR.cols(), CvType.CV_64FC1);
+
+            Core.compare(matArrays[4], zeros, matArrays[4], Core.CMP_GT);
+
+
+            Mat finalMat = new Mat();
+
+            matArrays[4].copyTo(finalMat, threshold);
+
+            //Imgproc.dilate(finalMat, finalMat, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3)));
+            //Imgproc.erode(finalMat, finalMat, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3)));
+
+            finalMat.convertTo(finalMat, imgMat.type());
+
+            Utils.matToBitmap(finalMat, bitmap);
 
             return 1;
         }
@@ -593,56 +692,14 @@ public class TelaContagem extends Activity {
         }
     }
 
-
-    //GET TEXTURE SIZE
-    public static int getMaxTextureSize() {
-        // Safe minimum default size
-        final int IMAGE_MAX_BITMAP_DIMENSION = 2048;
-
-        // Get EGL Display
-        EGL10 egl = (EGL10) EGLContext.getEGL();
-        EGLDisplay display = egl.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY);
-
-        // Initialise
-        int[] version = new int[2];
-        egl.eglInitialize(display, version);
-
-        // Query total number of configurations
-        int[] totalConfigurations = new int[1];
-        egl.eglGetConfigs(display, null, 0, totalConfigurations);
-
-        // Query actual list configurations
-        EGLConfig[] configurationsList = new EGLConfig[totalConfigurations[0]];
-        egl.eglGetConfigs(display, configurationsList, totalConfigurations[0], totalConfigurations);
-
-        int[] textureSize = new int[1];
-        int maximumTextureSize = 0;
-
-        // Iterate through all the configurations to located the maximum texture size
-        for (int i = 0; i < totalConfigurations[0]; i++) {
-            // Only need to check for width since opengl textures are always squared
-            egl.eglGetConfigAttrib(display, configurationsList[i], EGL10.EGL_MAX_PBUFFER_WIDTH, textureSize);
-
-            // Keep track of the maximum texture size
-            if (maximumTextureSize < textureSize[0])
-                maximumTextureSize = textureSize[0];
-        }
-
-        // Release
-        egl.eglTerminate(display);
-
-        // Return largest texture size found, or default
-        return Math.max(maximumTextureSize, IMAGE_MAX_BITMAP_DIMENSION);
-    }
-
     //PUBLIC CLASS OF CANVAS
     public class DrawView extends View {
 
+        Paint rPaint;
+        Canvas canvas = null;
         private Paint paint;
         private Context c;
-        Paint rPaint;
         private Path mPath;
-        Canvas canvas = null;
         private Path circlePath;
         private int sizeOfErasor = 50;
         private String TAG = "DrawView";
@@ -681,7 +738,7 @@ public class TelaContagem extends Activity {
             mPath = new Path();
 
             rPaint = new Paint();
-            rPaint.setColor(Color.WHITE);
+            rPaint.setColor(Color.GREEN);
             rPaint.setStrokeWidth(3);
             rPaint.setStyle(Paint.Style.STROKE);
 
@@ -704,7 +761,7 @@ public class TelaContagem extends Activity {
 
             canvas.drawPath(circlePath, paint);
 
-            if(isDrawingRec){
+            if (isDrawingRec) {
                 canvas.drawRect(downX, downY, curX, curY, rPaint);
             }
 

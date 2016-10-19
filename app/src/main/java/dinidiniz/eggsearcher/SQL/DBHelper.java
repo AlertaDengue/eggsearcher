@@ -43,12 +43,17 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String PIXEL_COLUMN_R = "r";
     public static final String PIXEL_COLUMN_G = "g";
     public static final String PIXEL_COLUMN_B = "b";
+    public static final String PIXEL_COLUMN_GRAYSCALE = "grayscale";
+    public static final String PIXEL_COLUMN_MEANB = "meanb";
     public static final String PIXEL_COLUMN_ISEGG = "isegg";
+
+    public static final String EGGS_IN_PIXEL_TABLE = "egg";
+    public static final String OTHER_IN_PIXEL_TABLE = "other";
 
 
     public DBHelper(Context context)
     {
-        super(context, DATABASE_NAME , null, 1);
+        super(context, DATABASE_NAME, null, 1);
     }
 
     @Override
@@ -74,7 +79,8 @@ public class DBHelper extends SQLiteOpenHelper {
                         + " integer primary key autoincrement, "
                         + PIXEL_COLUMN_R + " integer not null, " + PIXEL_COLUMN_G
                         + " integer not null, " + PIXEL_COLUMN_B + " integer not null, "
-                        + PIXEL_COLUMN_ISEGG + " integer not null)"
+                        + PIXEL_COLUMN_GRAYSCALE + " integer not null, " + PIXEL_COLUMN_MEANB
+                        + " integer not null, " + PIXEL_COLUMN_ISEGG + " integer not null)"
         );
     }
 
@@ -111,24 +117,28 @@ public class DBHelper extends SQLiteOpenHelper {
         return true;
     }
 
-    public boolean insertPixel  (SQLiteDatabase db, int r, int g, int b, int isegg)
-    {
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(PIXEL_COLUMN_R, r);
-        contentValues.put(PIXEL_COLUMN_G, g);
-        contentValues.put(PIXEL_COLUMN_B, b);
-        contentValues.put(PIXEL_COLUMN_ISEGG, isegg);
-        db.insert(PIXEL_TABLE_NAME, null, contentValues);
-        return true;
+    public void deleteAllPixelsFromTable(String tableName){
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.execSQL("delete from " + tableName);
+        db.close();
     }
 
 
     public boolean insertAllPixels(List<List<Integer>> listPixel){
         SQLiteDatabase db = this.getWritableDatabase();
 
+
         for (List<Integer> a : listPixel){
-            insertPixel(db, a.get(0), a.get(1), a.get(2), a.get(3));
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(PIXEL_COLUMN_R, a.get(0));
+            contentValues.put(PIXEL_COLUMN_G, a.get(1));
+            contentValues.put(PIXEL_COLUMN_B, a.get(2));
+            contentValues.put(PIXEL_COLUMN_GRAYSCALE, a.get(3));
+            contentValues.put(PIXEL_COLUMN_MEANB, a.get(4));
+            contentValues.put(PIXEL_COLUMN_ISEGG, a.get(5));
+            db.insert(PIXEL_TABLE_NAME, null, contentValues);
         }
+
 
         db.close();
         return true;
@@ -184,12 +194,16 @@ public class DBHelper extends SQLiteOpenHelper {
             finalArrayList.add(arrayList);
             res.moveToNext();
         }
+
+        res.close();
+        db.close();
         return finalArrayList;
     }
 
-    public List<List<Integer>> getAllPixeis()
+    public HashMap<String, List<List<Integer>>> getAllPixeis()
     {
-        List<List<Integer>> finalArrayList = new ArrayList<>();
+        List<List<Integer>> finalArrayListNotEgg = new ArrayList<>();
+        List<List<Integer>> finalArrayListEgg = new ArrayList<>();
 
         //hp = new HashMap();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -201,13 +215,35 @@ public class DBHelper extends SQLiteOpenHelper {
             arrayList.add(res.getInt(res.getColumnIndex(PIXEL_COLUMN_R)));
             arrayList.add(res.getInt(res.getColumnIndex(PIXEL_COLUMN_G)));
             arrayList.add(res.getInt(res.getColumnIndex(PIXEL_COLUMN_B)));
-            arrayList.add(res.getInt(res.getColumnIndex(PIXEL_COLUMN_ISEGG)));
-            finalArrayList.add(arrayList);
+            arrayList.add(res.getInt(res.getColumnIndex(PIXEL_COLUMN_GRAYSCALE)));
+            arrayList.add(res.getInt(res.getColumnIndex(PIXEL_COLUMN_MEANB)));
+            if (res.getInt(res.getColumnIndex(PIXEL_COLUMN_ISEGG)) == 1){
+                finalArrayListEgg.add(arrayList);
+            } else {
+                finalArrayListNotEgg.add(arrayList);
+            }
             res.moveToNext();
+        }
+        HashMap finalHashMap = new HashMap();
+        finalHashMap.put(EGGS_IN_PIXEL_TABLE, finalArrayListEgg);
+        finalHashMap.put(OTHER_IN_PIXEL_TABLE, finalArrayListNotEgg);
+
+        res.close();
+        db.close();
+        return finalHashMap;
+    }
+
+    public int getNumberOfPixels(){
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor res =  db.rawQuery( "select * from " + PIXEL_TABLE_NAME, null );
+        res.moveToFirst();
+        int n = 0;
+        while(res.isAfterLast() == false) {
+            n+=1;
         }
 
         res.close();
-        return finalArrayList;
+        return n;
     }
 
     public List<List<Integer>> getAllContour()

@@ -138,6 +138,31 @@
             </LinearLayout>
 
 
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:id="@+id/deleteTrainnningButton"
+                android:text="Delete all trainning"
+                android:onClick="deleteTrainningButton"/>
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:id="@+id/trainnningButton"
+                android:text="Train logistic"
+                android:onClick="trainningButton"/>
+            <TextView
+                android:id="@+id/percentageErrorLogisticTextView"
+                android:layout_gravity="center"
+                android:textSize="24sp"
+                android:textColor="@color/primary_dark_material_dark"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0%"/>
+
+
         </LinearLayout>
 
 

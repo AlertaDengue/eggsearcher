@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import dinidiniz.eggsearcher.R;
+import dinidiniz.eggsearcher.helper.Logistic;
 
 /**
  * Created by leon on 23/08/15.
@@ -35,12 +36,17 @@ public class TelaInicial extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.tela_inicial);
 
+
     }
 
     public void tirarFoto(View view) {
-        Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
-        photoPickerIntent.setType("image/*");
-        startActivityForResult(photoPickerIntent, SELECT_GO_TO_COUNT);
+
+        intent = new Intent(view.getContext(), TelaFotografia.class);
+        intent.putExtra(TelaFotografia.GO_TO_INTENT, TelaFotografia.GO_TO_COUNT);
+        startActivity(intent);
+        //Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
+        //photoPickerIntent.setType("image/*");
+        //startActivityForResult(photoPickerIntent, SELECT_GO_TO_COUNT);
     }
 
 
@@ -123,8 +129,9 @@ public class TelaInicial extends AppCompatActivity {
     }
 
     public void upload(View view) {
-        Intent intent = new Intent(this, TelaFilePicker.class);
-        startActivity(intent);
+        Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
+        photoPickerIntent.setType("image/*");
+        startActivityForResult(photoPickerIntent, SELECT_GO_TO_COUNT);
     }
 
     public void historic(View view) {

@@ -14,29 +14,63 @@
                 android:orientation="vertical"></LinearLayout>
 
     <LinearLayout
-        android:id="@+id/questionTab"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:orientation="horizontal">
+        android:orientation="vertical">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Is this an egg?"
-            android:layout_gravity="center"/>
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Is this an egg?"
+                android:layout_gravity="start"/>
 
-        <Button
-            android:id="@+id/buttonNo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="No" />
+            <TextView
+                android:id="@+id/percentagePixelsTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:text="0.00% already counted"/>
+            </LinearLayout>
 
-        <Button
-            android:id="@+id/buttonYes"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:id="@+id/questionTab"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Yes" />
+            android:gravity="center"
+            android:orientation="horizontal">
+            <Button
+                android:id="@+id/buttonNo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#9c6363"
+                android:layout_margin="3dp"
+                android:text="No" />
+
+            <Button
+                android:id="@+id/buttonPass"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#c6c663"
+                android:layout_margin="3dp"
+                android:text="Pass" />
+
+            <Button
+                android:id="@+id/buttonYes"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#639c63"
+                android:layout_margin="3dp"
+                android:text="Yes" />
+        </LinearLayout>
+
+
+
     </LinearLayout>
 
 </LinearLayout>

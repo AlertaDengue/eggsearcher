@@ -28,6 +28,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
@@ -73,8 +74,6 @@ public class CalibrateActivity extends Activity {
     String TAG = "TelaContagem";
     Intent intent;
     FileOutputStream fileOutStream;
-    Bitmap bitmapOriginal;
-    Bitmap bitmap;
     //Variables to zoom in and out
     PointF last = new PointF();
     PointF start = new PointF();
@@ -85,12 +84,17 @@ public class CalibrateActivity extends Activity {
     double meanU;
     double standartDeviationU;
     int numberOfEggs = 0;
+    private Bitmap bitmapModificate;
+    private Bitmap bitmap;
+    private Bitmap bitmap2;
+    private Bitmap bitmapOriginal;
+    private TextView percentagePixelsTextView;
     private int photoHeight;
     private int photoWidth;
     private Mat imgMat;
     private Mat imgMatOriginal;
     private Mat countour;
-    private Scalar contourScalar = new Scalar(255, 255, 255, 255);
+    private Scalar contourScalar = new Scalar(0, 255, 0, 20);
     private int startColum;
     private int startRow;
     private int endColum;
@@ -101,6 +105,7 @@ public class CalibrateActivity extends Activity {
     private LinearLayout linearLayout;
     private Button buttonYes;
     private Button buttonNo;
+    private Button buttonPass;
     private int startColumZoom;
     private int startRowZoom;
     private int endColumZoom;
@@ -108,6 +113,7 @@ public class CalibrateActivity extends Activity {
     //Global variables of Thresholding
     private List<MatOfPoint> contours;
     private int pointContour = 0;
+    private int meanBChannel;
 
 
     //Start OpenCV and download if necessary
@@ -117,6 +123,9 @@ public class CalibrateActivity extends Activity {
             switch (status) {
                 case LoaderCallbackInterface.SUCCESS: {
                     Log.i(TAG, "OpenCV loaded successfully");
+                    //Load to get canvaswidth and canvasheight
+                    loadScreen();
+
 
                     startDrawView();
 
@@ -178,14 +187,13 @@ public class CalibrateActivity extends Activity {
         setContentView(R.layout.activity_calibrate);
 
         dbHelper = new DBHelper(this);
-
-        //Load to get canvaswidth and canvasheight
-        loadScreen();
+        percentagePixelsTextView = (TextView) findViewById(R.id.percentagePixelsTextView);
 
 
         //Control Scroll Views
         buttonNo = (Button) findViewById(R.id.buttonNo);
         buttonYes = (Button) findViewById(R.id.buttonYes);
+        buttonPass = (Button) findViewById(R.id.buttonPass);
         linearLayout = (LinearLayout) findViewById(R.id.captured_image);
         questionTabLayout = (LinearLayout) findViewById(R.id.questionTab);
 
@@ -247,11 +255,11 @@ public class CalibrateActivity extends Activity {
                 }
 
                 //If ends early will end at it was ending in the first place
-                if (endColumZoom + 2*delta > endColum - startColum) {
-                    if (startColumZoom + endColumZoom + 2*delta > canvasWidth){
-                        endColumZoom = canvasWidth -startColumZoom;
+                if (endColumZoom + 2 * delta > endColum - startColum) {
+                    if (startColumZoom + endColumZoom + 2 * delta > canvasWidth) {
+                        endColumZoom = canvasWidth - startColumZoom;
                     } else {
-                        endColumZoom = endColumZoom + 2*delta;
+                        endColumZoom = endColumZoom + 2 * delta;
                     }
                 } else {
                     endColumZoom = endColum - startColum;
@@ -259,7 +267,7 @@ public class CalibrateActivity extends Activity {
 
                 //If starts after will start at the the start
                 if (startRowZoom - delta < startRow) {
-                    if (startRowZoom - delta < 0){
+                    if (startRowZoom - delta < 0) {
                         startRowZoom = 0;
                     } else {
                         startRowZoom = startRowZoom - delta;
@@ -269,11 +277,11 @@ public class CalibrateActivity extends Activity {
                 }
 
                 //If ends early will end at it was ending in the first place
-                if (endRowZoom + 2*delta > endRow - startRow) {
-                    if (startRowZoom + endRowZoom + 2*delta > canvasHeight){
-                        endRowZoom = canvasHeight -startRowZoom;
+                if (endRowZoom + 2 * delta > endRow - startRow) {
+                    if (startRowZoom + endRowZoom + 2 * delta > canvasHeight) {
+                        endRowZoom = canvasHeight - startRowZoom;
                     } else {
-                        endRowZoom = endRowZoom + 2*delta;
+                        endRowZoom = endRowZoom + 2 * delta;
                     }
                 } else {
                     endRowZoom = endRow - startRow;
@@ -282,8 +290,11 @@ public class CalibrateActivity extends Activity {
 
                 //get bitmap
                 bitmap = null;
-                bitmap = Bitmap.createBitmap(bitmapOriginal, startColumZoom, startRowZoom, endColumZoom, endRowZoom);
+                bitmap = Bitmap.createBitmap(bitmapModificate, startColumZoom, startRowZoom, endColumZoom, endRowZoom);
                 bitmap = getResizedBitmap(bitmap, photoHeight, photoWidth);
+                bitmap2 = null;
+                bitmap2 = Bitmap.createBitmap(bitmapOriginal, startColumZoom, startRowZoom, endColumZoom, endRowZoom);
+                bitmap2 = getResizedBitmap(bitmap2, photoHeight, photoWidth);
 
                 //Restart drawView
                 drawView.invalidate();
@@ -297,13 +308,6 @@ public class CalibrateActivity extends Activity {
         return true;
     }
 
-
-    public void saveScreen() {
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putInt("numberOfEggs", numberOfEggs);
-        editor.commit();
-    }
 
     public void startDrawView() {
         drawView = new DrawView(this);
@@ -357,7 +361,6 @@ public class CalibrateActivity extends Activity {
         Bitmap bitmap = BitmapFactory.decodeFile(filePath);
         int widthResolution = bitmap.getWidth();
         int heightResolution = bitmap.getHeight();
-        Log.i(TAG, "bitmap width: " + widthResolution + " ;bitmap height: " + heightResolution);
 
         int maxTextureSize = getMaxTextureSize();
 
@@ -372,13 +375,20 @@ public class CalibrateActivity extends Activity {
             canvasHeight = heightResolution;
         }
 
-
-        bitmap = getResizedBitmap(bitmap, canvasHeight, canvasWidth);
         bitmap = RotateBitmap(bitmap, getRightAngleImage(filePath));
+        bitmap = getResizedBitmap(bitmap, canvasHeight, canvasWidth);
+
+        Log.i(TAG, "bitmap width: " + bitmap.getWidth() + " ;bitmap height: " + bitmap.getHeight());
 
         return bitmap;
     }
 
+    /***
+     * Get the right angle of the figure
+     *
+     * @param photoPath
+     * @return
+     */
     private int getRightAngleImage(String photoPath) {
 
         int degree = 0;
@@ -417,7 +427,10 @@ public class CalibrateActivity extends Activity {
         return degree;
     }
 
-    private void goBacktoInitialScreen(){
+    /***
+     * Function to go back to initial screen after seeing the last egg
+     */
+    private void goBacktoInitialScreen() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("That was the last egg in the picture that our system detected")
                 .setCancelable(false)
@@ -450,8 +463,6 @@ public class CalibrateActivity extends Activity {
             }
 
 
-
-
             matContour = contours.get(pointContour);
 
             org.opencv.core.Rect rect = Imgproc.boundingRect(matContour);
@@ -462,36 +473,23 @@ public class CalibrateActivity extends Activity {
 
             Log.i(TAG, "left: " + left + " ;right: " + right + " ;top: " + top + " ;bottom: " + bottom);
 
-            int sumLeft = 2;
-            int sumRight = 5;
-            int sumTop = 2;
-            int sumBottom = 4 * sumTop;
+            int sumLeft = 50;
+            int sumTop = 50;
 
             startColum = left - sumLeft;
             startRow = top - sumTop;
-            endColum = left - sumLeft + rect.width + 2 * sumLeft;
-            endRow = top - sumTop + rect.height + sumBottom;
+            endColum = left + rect.width + sumLeft;
+            endRow = top + rect.height + sumTop;
 
-            if (left < sumLeft) {
-                sumLeft = left;
-            }
-            if (top < sumTop) {
-                sumTop = top;
-            }
+            Log.i(TAG, "startColum: " + startColum + " ;startRow: " + startRow + " ;endColum: " + (endColum - startColum) + " ;endRow: " + (endRow - startRow));
+            Log.i(TAG, "canvasWidth: " + canvasWidth + "; canvasHeight: " + canvasHeight);
 
-            if (canvasWidth - right < sumRight) {
-                sumRight = canvasWidth - right;
-            }
 
-            if (canvasHeight - bottom < sumBottom) {
-                sumBottom = canvasHeight - bottom;
-            }
-
-            if (endColum > canvasWidth){
+            if (endColum > canvasWidth) {
                 endColum = canvasWidth;
             }
 
-            if(endRow > canvasHeight){
+            if (endRow > canvasHeight) {
                 endRow = canvasHeight;
             }
 
@@ -506,10 +504,10 @@ public class CalibrateActivity extends Activity {
             //DRAW JUST THE PERIMETER
             Mat imgMatPerimeter = imgMatOriginal.clone();
 
-            Imgproc.drawContours(imgMatPerimeter, contours, pointContour, contourScalar, 1, 4, countour, 0, new org.opencv.core.Point());
+            Imgproc.drawContours(imgMatPerimeter, contours, pointContour, contourScalar, 1, 8, countour, 0, new org.opencv.core.Point());
 
 
-            Utils.matToBitmap(imgMatPerimeter, bitmapOriginal);
+            Utils.matToBitmap(imgMatPerimeter, bitmapModificate);
 
             Log.i(TAG, "startColum: " + startColum + " ;startRow: " + startRow + " ;endColum: " + (endColum - startColum) + " ;endRow: " + (endRow - startRow));
 
@@ -522,15 +520,19 @@ public class CalibrateActivity extends Activity {
 
             //Create bitmap of the part of the original bitmap interested and than zoom in
             bitmap = null;
-            bitmap = Bitmap.createBitmap(bitmapOriginal, startColum, startRow, endColum - startColum, endRow - startRow);
+            bitmap = Bitmap.createBitmap(bitmapModificate, startColum, startRow, endColum - startColum, endRow - startRow);
             bitmap = getResizedBitmap(bitmap, photoHeight, photoWidth);
+
+            //O SEGUNDO bitmap é para ser usado embaixo do primeiro e permitir o canal alpha existir.
+            bitmap2 = null;
+            bitmap2 = Bitmap.createBitmap(bitmapOriginal, startColum, startRow, endColum - startColum, endRow - startRow);
+            bitmap2 = getResizedBitmap(bitmap2, photoHeight, photoWidth);
 
             //remove old view
             linearLayout.removeView(drawView);
 
             //Add new view
             startDrawView();
-
 
 
         }
@@ -552,15 +554,18 @@ public class CalibrateActivity extends Activity {
         Log.i(TAG, "Area total: " + ((endRow - startRow) * (endColum - startColum)));
         Log.i(TAG, "Stimated area: " + Imgproc.contourArea(matContour));
 
+        Outerloop:
         for (int i = startRow; i < endRow; i++) {
             for (int j = startColum; j < endColum; j++) {
                 //Log.i(TAG, "entrou");
-                if (imgMat.get(i, j)[0] == 255) {
+                if (imgMat.get(i, j)[1] == 255) {
                     List<Integer> pixel = new ArrayList<Integer>();
                     double[] pixelOriginal = imgMatOriginal.get(i, j);
                     pixel.add((int) pixelOriginal[0]);
                     pixel.add((int) pixelOriginal[1]);
                     pixel.add((int) pixelOriginal[2]);
+                    pixel.add((int) (pixelOriginal[0] * 0.299 + pixelOriginal[1] * 0.587 + pixelOriginal[2] * 0.114));
+                    pixel.add(meanBChannel);
                     if (answer) {
                         pixel.add(1);
                     } else {
@@ -568,6 +573,10 @@ public class CalibrateActivity extends Activity {
                     }
                     pixels.add(pixel);
                     area += 1;
+
+                    if (area > 500) {
+                        break Outerloop;
+                    }
                 }
             }
         }
@@ -595,33 +604,83 @@ public class CalibrateActivity extends Activity {
             );
         }
 
+
         pointContour += 1;
     }
 
-    //Load SCREEN using this function
+    /***
+     * Function to load with screen; get shared preferences to see default values
+     */
     public void loadScreen() {
         Resources res = getResources();
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
 
         //GET PICTURE WITH FILEPATH AND PUT IT IN BITMAP AND GET THE RIGHT SIZES OF THE CANVAS
         filePath = sharedPref.getString("imagepath", "/");
-        bitmapOriginal = getBitmapFromFilePath(filePath);
-        bitmap = bitmapOriginal;
+        bitmapModificate = getBitmapFromFilePath(filePath);
+        bitmap = bitmapModificate;
+        bitmapOriginal = bitmapModificate;
+        bitmap2 = bitmapOriginal;
+        imgMatOriginal = new Mat();
 
         //GET HEIGHT OF THE PICTURE THAT WAS TAKEN
         heightOn = sharedPref.getInt("heightFromLentsNumberPickerSelected", 12);
 
         //GET THRESHOLD LEVEL SELECTED
         int thresholdSpinnerSelected = sharedPref.getInt("thresholdSpinnerSelected", 0);
-        if (thresholdSpinnerSelected == 0) {
-            thresholdOn = 92;
-        } else {
-            String valueString = res.getStringArray(R.array.thresholdSpinnerList)[thresholdSpinnerSelected];
-            thresholdOn = Integer.parseInt(valueString);
-        }
+        String valueString = res.getStringArray(R.array.thresholdSpinnerList)[thresholdSpinnerSelected];
+        thresholdOn = Integer.parseInt(valueString);
+
+
+        Log.i(TAG, "threshold point: " + thresholdOn);
 
         //GET RESOLUTION OF THE PICTURE
         resolutionOn = (double) canvasHeight * canvasWidth / 1024000;
+    }
+
+    /***
+     * Thread to work each pixel and put them in dataset.
+     */
+    public class isEggThread extends AsyncTask<Void, String, Integer> {
+
+        private ProgressDialog progress;
+        private Context context;
+        private Boolean isEgg;
+
+        public isEggThread(Context context, Boolean isEgg) {
+            this.context = context;
+            this.isEgg = isEgg;
+        }
+
+        @Override
+        protected Integer doInBackground(Void... params) {
+            publishProgress("Adding pixels to Data");
+            addToDataIsEgg(isEgg);
+            return null;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progress = new ProgressDialog(context);
+            progress.setMessage("Starting...");
+            progress.show();
+        }
+
+        @Override
+        protected void onProgressUpdate(String... params) {
+            progress.setMessage(params[0]);
+        }
+
+        @Override
+        protected void onPostExecute(Integer integer) {
+            super.onPostExecute(integer);
+            progress.setMessage("Going to next fragment");
+            goToNext();
+            progress.dismiss();
+
+
+        }
     }
 
     //PUBLIC CLASS TO THRESHOLD IN A DIFFERENT THREAD
@@ -637,8 +696,6 @@ public class CalibrateActivity extends Activity {
         @Override
         protected void onPreExecute() {
             progress = new ProgressDialog(context);
-            bitmapOriginal = loadBitmapFromView(drawView);
-            bitmap = bitmapOriginal;
             progress.setMessage("Starting...");
             progress.show();
         }
@@ -646,43 +703,45 @@ public class CalibrateActivity extends Activity {
         protected Integer doInBackground(Void... params) {
             publishProgress("Thresholding");
 
-
             countour = new Mat();
             contours = new ArrayList<MatOfPoint>();
             imgMat = new Mat();
-            imgMatOriginal = new Mat();
+
             Mat threshold = new Mat();
             List<Mat> mRgb = new ArrayList<Mat>(3);
             int pointA = thresholdOn;
-            int pointB = 10;
-
+            int pointB = 5;
+            Utils.bitmapToMat(bitmapModificate, imgMatOriginal);
 
             //Get Blue channel
-            Utils.bitmapToMat(bitmapOriginal, imgMatOriginal);
             imgMat = imgMatOriginal;
+            //Get Blue channel
+            Utils.bitmapToMat(bitmap, imgMat);
             Core.split(imgMat, mRgb);
-            Mat mB = mRgb.get(0);
+            Mat mR = mRgb.get(0);
+            Mat mB = mRgb.get(2);
 
-            //SET TRESHOLD VALUE
 
+            //Get mean of the blue channel after getting only pixels bellow 180
             MatOfDouble mu = new MatOfDouble();
             MatOfDouble sigma = new MatOfDouble();
 
-            Core.meanStdDev(mB, mu, sigma);
-
-            Log.i(TAG, "Mean of Red Channel: " + mu.get(0, 0)[0]);
+            Imgproc.threshold(mB, mB, 180, 255, Imgproc.THRESH_TOZERO_INV);
+            Core.meanStdDev(mB, mu, sigma, mB);
+            meanBChannel = (int) mu.get(0, 0)[0];
+            Log.i(TAG, "Mean of Blue Channel: " + mu.get(0, 0)[0]);
 
 
             //Thresholding from pointA to pointB
-            Imgproc.threshold(mB, mB, pointA, 255, Imgproc.THRESH_TOZERO_INV);
-            Imgproc.threshold(mB, threshold, pointB, 255, Imgproc.THRESH_BINARY);
+            Imgproc.threshold(mR, mR, pointA, 255, Imgproc.THRESH_TOZERO_INV);
+            Imgproc.threshold(mR, threshold, pointB, 255, Imgproc.THRESH_BINARY);
 
 
             publishProgress("Labelling connected components");
 
             Imgproc.findContours(threshold, contours, countour, Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
 
-            Utils.matToBitmap(imgMat, bitmapOriginal);
+            Utils.matToBitmap(imgMat, bitmapModificate);
 
             publishProgress("Counting areas");
 
@@ -703,16 +762,27 @@ public class CalibrateActivity extends Activity {
             buttonNo.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    addToDataIsEgg(false);
-                    goToNext();
+                    new isEggThread(context, false).execute();
+                    percentagePixelsTextView.setText(String.format("%.2f",(((double) pointContour)/contours.size())* 100)+ "% already counted");
                 }
             });
+
 
             buttonYes.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    addToDataIsEgg(true);
+                    new isEggThread(context, true).execute();
                     goToNext();
+                    percentagePixelsTextView.setText(String.format("%.2f",(((double) pointContour)/contours.size())* 100)+ "% already counted");
+                }
+            });
+
+            buttonPass.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    pointContour += 1;
+                    goToNext();
+                    percentagePixelsTextView.setText(String.format("%.2f",(((double) pointContour)/contours.size())* 100)+ "% already counted");
                 }
             });
             //Change button
@@ -755,6 +825,7 @@ public class CalibrateActivity extends Activity {
         }
 
         private void init() {
+
             paint = new Paint();
             paint.setColor(Color.BLACK);
             paint.setStyle(Paint.Style.FILL_AND_STROKE);
@@ -779,6 +850,46 @@ public class CalibrateActivity extends Activity {
         protected void onDraw(Canvas canvas) {
             // TODO Auto-generated method stub
             super.onDraw(canvas);
+
+            /*
+            Mat bitmat2 = new Mat();
+            Utils.bitmapToMat(bitmap2, bitmat2);
+
+            List<Mat> mRgb = new ArrayList<Mat>(3);
+            Bitmap redBitmap = Bitmap.createBitmap(bitmat2.cols(), bitmat2.rows(), Bitmap.Config.ARGB_8888);
+            Bitmap greenBitmap = Bitmap.createBitmap(bitmat2.cols(), bitmat2.rows(), Bitmap.Config.ARGB_8888);
+            Bitmap blueBitmap = Bitmap.createBitmap(bitmat2.cols(), bitmat2.rows(), Bitmap.Config.ARGB_8888);
+            Core.split(bitmat2, mRgb);
+
+            Utils.matToBitmap(mRgb.get(0), redBitmap);
+            Utils.matToBitmap(mRgb.get(1), greenBitmap);
+            Utils.matToBitmap(mRgb.get(2), blueBitmap);
+
+            Paint redPaint = new Paint();
+            redPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.LIGHTEN));
+            redPaint.setShader(new BitmapShader(redBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP));
+            redPaint.setColorFilter(new PorterDuffColorFilter(Color.RED, PorterDuff.Mode.DARKEN));
+
+            Paint greenPaint = new Paint();
+            greenPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.LIGHTEN));
+            greenPaint.setShader(new BitmapShader(greenBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP));
+            greenPaint.setColorFilter(new PorterDuffColorFilter(Color.GREEN, PorterDuff.Mode.DARKEN));
+
+            Paint bluePaint = new Paint();
+            bluePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.LIGHTEN));
+            bluePaint.setShader(new BitmapShader(blueBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP));
+            bluePaint.setColorFilter(new PorterDuffColorFilter(Color.BLUE, PorterDuff.Mode.DARKEN));
+
+            Paint alphaPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            alphaPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
+
+
+            canvas.drawRect(rectangle, redPaint);
+            canvas.drawRect(rectangle, greenPaint);
+            canvas.drawRect(rectangle, bluePaint);
+            canvas.drawBitmap(bitmap, 0, 0, alphaPaint);
+            */
+
 
             canvas.drawBitmap(bitmap, null, rectangle, null);
             canvas.translate(0, 0);

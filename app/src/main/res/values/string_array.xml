@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="thresholdSpinnerList">
-        <item>AUTOMATIC</item>
+        <item>90</item>
         <item>160</item>
         <item>140</item>
         <item>120</item>

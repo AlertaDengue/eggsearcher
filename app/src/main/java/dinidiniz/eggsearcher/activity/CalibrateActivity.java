@@ -53,6 +53,7 @@ import javax.microedition.khronos.egl.EGLDisplay;
 
 import dinidiniz.eggsearcher.R;
 import dinidiniz.eggsearcher.SQL.DBHelper;
+import dinidiniz.eggsearcher.helper.ImageProcessing;
 
 /**
  * Created by leon on 09/05/16.
@@ -719,17 +720,10 @@ public class CalibrateActivity extends Activity {
             Utils.bitmapToMat(bitmap, imgMat);
             Core.split(imgMat, mRgb);
             Mat mR = mRgb.get(0);
-            Mat mB = mRgb.get(2);
-
 
             //Get mean of the blue channel after getting only pixels bellow 180
-            MatOfDouble mu = new MatOfDouble();
-            MatOfDouble sigma = new MatOfDouble();
-
-            Imgproc.threshold(mB, mB, 180, 255, Imgproc.THRESH_TOZERO_INV);
-            Core.meanStdDev(mB, mu, sigma, mB);
-            meanBChannel = (int) mu.get(0, 0)[0];
-            Log.i(TAG, "Mean of Blue Channel: " + mu.get(0, 0)[0]);
+            meanBChannel = ImageProcessing.getMeanOfBlueChannelInMat(imgMat);
+            Log.i(TAG, "Mean of Blue Channel: " + meanBChannel);
 
 
             //Thresholding from pointA to pointB

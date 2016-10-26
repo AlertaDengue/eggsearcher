@@ -53,6 +53,7 @@ import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
 
 import dinidiniz.eggsearcher.R;
+import dinidiniz.eggsearcher.helper.ImageProcessing;
 
 public class TelaContagem extends Activity {
 
@@ -444,11 +445,55 @@ public class TelaContagem extends Activity {
 
         MatOfDouble mu = new MatOfDouble();
         MatOfDouble sigma = new MatOfDouble();
-        Imgproc.threshold(mB, mB, 180, 255, Imgproc.THRESH_TOZERO_INV);
+        Imgproc.threshold(mB, mB, 130, 255, Imgproc.THRESH_BINARY_INV);
         Core.meanStdDev(mB, mu, sigma, mB);
-        meanBChannel = (int) mu.get(0, 0)[0];
+
+        meanBChannel = ImageProcessing.getMeanOfBlueChannelInMat(imgMat);
+
 
         Log.i(TAG, "mean of B channel: " + meanBChannel);
+        //Draw the rectangule to find the ovitrap in the middle
+        mB.convertTo(mB, CvType.CV_8UC1);
+        Mat matBlurCanny = mB.clone();
+
+        Imgproc.blur(matBlurCanny, matBlurCanny, new Size(5, 5));
+        Imgproc.Canny(matBlurCanny, matBlurCanny, 15, 15);
+
+        Imgproc.dilate(matBlurCanny, matBlurCanny, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(30, 30)));
+        Imgproc.erode(matBlurCanny, matBlurCanny, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(30, 30)));
+
+
+        List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+
+        Imgproc.findContours(matBlurCanny, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+
+        org.opencv.core.Point centroidOfImage = new org.opencv.core.Point(canvasWidth/2, canvasHeight/2);
+
+        int indexOfMinDistance = 0;
+        Double min = null;
+
+        for (int idx = 0; idx < contours.size(); idx++) {
+            org.opencv.core.Point centroid = ImageProcessing.getCentroidOfContour(contours.get(idx));
+            double distance = Math.pow(centroid.x - centroidOfImage.x, 2) + Math.pow(centroid.y - centroidOfImage.y, 2);
+            if ((Imgproc.contourArea(contours.get(idx)) > 150) && ((min==null) || ( distance < min))) {
+                indexOfMinDistance = idx;
+                min = distance;
+            }
+        }
+
+        Log.i(TAG, "index: " + indexOfMinDistance);
+
+        Mat contour = org.opencv.core.Mat.zeros(imgMat.rows(), imgMat.cols(), CvType.CV_8UC1);
+        Mat ones = org.opencv.core.Mat.ones(imgMat.rows(), imgMat.cols(), CvType.CV_8UC1);
+        Imgproc.drawContours(contour, contours, indexOfMinDistance, new Scalar(255), -1);
+
+        ones.setTo(new Scalar(0), contour);
+        imgMat.setTo(new Scalar(0), ones);
+
+        Utils.matToBitmap(imgMat, bitmap);
+
+
+        contour.release();
 
         //GET HEIGHT OF THE PICTURE THAT WAS TAKEN
         heightOn = sharedPref.getInt("heightFromLentsNumberPickerSelected", 12);
@@ -510,7 +555,7 @@ public class TelaContagem extends Activity {
 
             for (int idx = 0; idx < contours.size(); idx++) {
                 //Mat contour = contours.get(idx);
-                Mat countour = org.opencv.core.Mat.zeros(imgMat.rows(), imgMat.cols(), imgMat.type());
+                Mat countour = org.opencv.core.Mat.zeros(imgMat.rows(), imgMat.cols(), CvType.CV_8UC1);
                 // CV_FILLED fills the connected components found
                 Imgproc.drawContours(countour, contours, idx, new Scalar(1), -1);
                 double countourArea = Core.sumElems(countour).val[0];

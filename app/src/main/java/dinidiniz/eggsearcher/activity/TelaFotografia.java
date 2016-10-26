@@ -1,10 +1,11 @@
 package dinidiniz.eggsearcher.activity;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.hardware.Camera;
-//import android.hardware.camera2.*;
+import android.hardware.camera2.*;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -138,12 +139,15 @@ public class TelaFotografia extends AppCompatActivity {
     public void getCameraInstance(){
         mCamera = null;
         try {
+
             mCamera = Camera.open(); // attempt to get a Camera instance
             Camera.Parameters params = mCamera.getParameters();
             params.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
             params.setExposureCompensation(0);
             params.set("metering", "matrix");
-            params.set("jpeg-quality", 100);
+            params.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_INCANDESCENT);
+            //params.setSceneMode(Camera.Parameters.SCENE_MODE_SNOW);
+            params.setJpegQuality(100);
             if(namePhotoSpinner.getSelectedItemPosition() == 1) {
                 params.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
             } else {

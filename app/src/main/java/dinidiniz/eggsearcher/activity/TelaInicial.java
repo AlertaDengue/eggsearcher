@@ -91,11 +91,8 @@ public class TelaInicial extends AppCompatActivity {
                             File mypath = getFileStreamPath("tempIMG.png");
                             mypath.createNewFile();
 
-                            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                            bitmap.compress(Bitmap.CompressFormat.PNG, 100 /*ignored for PNG*/, bos);
-                            byte[] bitmapdata = bos.toByteArray();
                             FileOutputStream fos = new FileOutputStream(mypath);
-                            fos.write(bitmapdata);
+                            bitmap.compress(Bitmap.CompressFormat.PNG, 100 /*ignored for PNG*/, fos);
                             fos.flush();
                             fos.close();
 

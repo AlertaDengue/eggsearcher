@@ -1,6 +1,5 @@
 package dinidiniz.eggsearcher.activity;
 
-import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -19,6 +18,7 @@ import android.media.ExifInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v7.app.AppCompatActivity;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Display;
@@ -43,7 +43,10 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,12 +55,14 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
 
+import dinidiniz.eggsearcher.Consts;
 import dinidiniz.eggsearcher.R;
 import dinidiniz.eggsearcher.helper.ImageProcessing;
 
-public class TelaContagem extends Activity {
+public class TelaContagem extends AppCompatActivity {
 
     static final float TOUCH_TOLERANCE = 15;
+    static final private String TAG = TelaContagem.class.getName();
     float downX, downY;
     float curX, curY;
     boolean started = false;
@@ -71,7 +76,6 @@ public class TelaContagem extends Activity {
     int canvasWidth;
     long startTime;
     long curTime;
-    String TAG = "TelaContagem";
     LinearLayout linearLayout;
     Button thresholdingImageButton;
     Intent intent;
@@ -90,6 +94,7 @@ public class TelaContagem extends Activity {
     double standartDeviationU;
     int numberOfEggs = 0;
     double[] weights = {1, 1, 1, 1, 1};
+    private Boolean seletecToUpload = true;
     //Thouch Events variables
     private float mX, mY;
     private ScrollView vScroll;
@@ -102,12 +107,8 @@ public class TelaContagem extends Activity {
             switch (status) {
                 case LoaderCallbackInterface.SUCCESS: {
                     Log.i(TAG, "OpenCV loaded successfully");
-
                     //Load to get canvaswidth and canvasheight
                     loadScreen();
-
-                    startDrawView();
-
                 }
                 break;
                 default: {
@@ -161,8 +162,12 @@ public class TelaContagem extends Activity {
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Bundle getIntentExtras = getIntent().getExtras();
+        seletecToUpload = getIntentExtras.getBoolean(Consts.UPLOADED_PHOTO);
         setContentView(R.layout.tela_contagem);
 
+        Log.i(TAG, "Entrou na tela contagem");
+        Log.i(TAG, "bitmap : " + (bitmap == null));
 
         //GET SCREEN SIZE
         Display display = getWindowManager().getDefaultDisplay();
@@ -174,18 +179,20 @@ public class TelaContagem extends Activity {
         hScroll = (HorizontalScrollView) findViewById(R.id.hScroll);
         erasorCheckBox = (CheckBox) findViewById(R.id.erasorCheckBox);
 
+
         //Make it sync OpenCV
+
         if (!OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_2, this, mLoaderCallback)) {
             Log.e("TEST", "Cannot connect to OpenCV Manager");
         }
-
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        this.finish();
+    public void onResume() {
+        super.onResume();
+        //OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_1_0, this, mLoaderCallback);
     }
+
 
     //Controls bar Moves and Eraser of Canvas
     @Override
@@ -354,9 +361,80 @@ public class TelaContagem extends Activity {
         return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
     }
 
-    public Bitmap getBitmapFromFilePath(String filePath) {
-        Bitmap bitmap = BitmapFactory.decodeFile(filePath);
+    @Override
+    protected void onStop() {
+        Log.i(TAG, "Activity paused. Bitmap : " + (bitmap == null));
+        super.onStop();
 
+    }
+
+    @Override
+    protected void onActivityResult(final int requestCode, int resultCode, final Intent imageReturnedIntent) {
+        super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
+        Log.i(TAG, "resultado do upload");
+        switch (requestCode) {
+            case Consts.SELECTED_PHOTO:
+                if (resultCode == RESULT_OK) {
+                    Log.i(TAG, "resultado do upload");
+
+                    InputStream is = null;
+                    bitmap = null;
+                    try {
+
+                        is = getContentResolver().openInputStream(imageReturnedIntent.getData());
+
+                        bitmap = BitmapFactory.decodeStream(is);
+                        bitmap = adjustBitmap(bitmap);
+                        if (is != null) {
+                            is.close();
+                        }
+
+                        new getElementAtMiddleThread(TelaContagem.this).execute();
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                break;
+        }
+    }
+
+    /***
+     * Get Bitmap, if the user selected upload, will ask to fetch the picture, otherwise, will get a saved pic
+     *
+     * @param filePath
+     * @return
+     */
+    public void getBitmap(String filePath) {
+
+        Log.i(TAG, "lets get bitmap: " + seletecToUpload);
+        if (bitmap == null) {
+            if (seletecToUpload) {
+                //Intent photoPickerIntent = new Intent(Intent.ACTION_GET_CONTENT);
+                //photoPickerIntent.setType("image/*");
+                Intent photoPickerIntent = new Intent(
+                        Intent.ACTION_PICK,
+                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                startActivityForResult(photoPickerIntent, Consts.SELECTED_PHOTO);
+            } else {
+                bitmap = BitmapFactory.decodeFile(filePath);
+                bitmap = adjustBitmap(bitmap);
+
+                new getElementAtMiddleThread(TelaContagem.this).execute();
+
+            }
+        }
+
+    }
+
+    /***
+     * Adjust the bitmap to fit in the screen
+     *
+     * @param bitmap
+     * @return adjusted bitmap
+     */
+    private Bitmap adjustBitmap(Bitmap bitmap) {
         int widthResolution = bitmap.getWidth();
         int heightResolution = bitmap.getHeight();
 
@@ -380,6 +458,12 @@ public class TelaContagem extends Activity {
         return bitmap;
     }
 
+    /***
+     * Put the picture in the right angle
+     *
+     * @param photoPath
+     * @return same picture but rotated
+     */
     private int getRightAngleImage(String photoPath) {
 
         int degree = 0;
@@ -418,8 +502,6 @@ public class TelaContagem extends Activity {
         return degree;
     }
 
-    //OTHER CLASSES NOW
-
     public void loadScreen() {
         Resources res = getResources();
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
@@ -433,67 +515,6 @@ public class TelaContagem extends Activity {
 
         //GET PICTURE WITH FILEPATH AND PUT IT IN BITMAP AND GET THE RIGHT SIZES OF THE CANVAS
         filePath = sharedPref.getString("imagepath", "/");
-        bitmap = getBitmapFromFilePath(filePath);
-
-        //Get mean of U channel of the bitmap
-        Mat imgMat = new Mat();
-        Utils.bitmapToMat(bitmap, imgMat);
-
-        List<Mat> mRgb = new ArrayList<Mat>(3);
-        Core.split(imgMat, mRgb);
-        Mat mB = mRgb.get(2);
-
-        MatOfDouble mu = new MatOfDouble();
-        MatOfDouble sigma = new MatOfDouble();
-        Imgproc.threshold(mB, mB, 130, 255, Imgproc.THRESH_BINARY_INV);
-        Core.meanStdDev(mB, mu, sigma, mB);
-
-        meanBChannel = ImageProcessing.getMeanOfBlueChannelInMat(imgMat);
-
-
-        Log.i(TAG, "mean of B channel: " + meanBChannel);
-        //Draw the rectangule to find the ovitrap in the middle
-        mB.convertTo(mB, CvType.CV_8UC1);
-        Mat matBlurCanny = mB.clone();
-
-        Imgproc.blur(matBlurCanny, matBlurCanny, new Size(5, 5));
-        Imgproc.Canny(matBlurCanny, matBlurCanny, 15, 15);
-
-        Imgproc.dilate(matBlurCanny, matBlurCanny, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(30, 30)));
-        Imgproc.erode(matBlurCanny, matBlurCanny, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(30, 30)));
-
-
-        List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-
-        Imgproc.findContours(matBlurCanny, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-
-        org.opencv.core.Point centroidOfImage = new org.opencv.core.Point(canvasWidth/2, canvasHeight/2);
-
-        int indexOfMinDistance = 0;
-        Double min = null;
-
-        for (int idx = 0; idx < contours.size(); idx++) {
-            org.opencv.core.Point centroid = ImageProcessing.getCentroidOfContour(contours.get(idx));
-            double distance = Math.pow(centroid.x - centroidOfImage.x, 2) + Math.pow(centroid.y - centroidOfImage.y, 2);
-            if ((Imgproc.contourArea(contours.get(idx)) > 150) && ((min==null) || ( distance < min))) {
-                indexOfMinDistance = idx;
-                min = distance;
-            }
-        }
-
-        Log.i(TAG, "index: " + indexOfMinDistance);
-
-        Mat contour = org.opencv.core.Mat.zeros(imgMat.rows(), imgMat.cols(), CvType.CV_8UC1);
-        Mat ones = org.opencv.core.Mat.ones(imgMat.rows(), imgMat.cols(), CvType.CV_8UC1);
-        Imgproc.drawContours(contour, contours, indexOfMinDistance, new Scalar(255), -1);
-
-        ones.setTo(new Scalar(0), contour);
-        imgMat.setTo(new Scalar(0), ones);
-
-        Utils.matToBitmap(imgMat, bitmap);
-
-
-        contour.release();
 
         //GET HEIGHT OF THE PICTURE THAT WAS TAKEN
         heightOn = sharedPref.getInt("heightFromLentsNumberPickerSelected", 12);
@@ -513,6 +534,109 @@ public class TelaContagem extends Activity {
         Log.i(TAG, "Mean stimated: " + meanU);
         Log.i(TAG, "Standart deviation stimated: " + standartDeviationU);
 
+        getBitmap(filePath);
+    }
+
+//OTHER CLASSES NOW
+
+    /***
+     * Class to identify and select the ovitrap in the middle of the picture
+     */
+    public class getElementAtMiddleThread extends AsyncTask<Void, String, Integer> {
+
+        private ProgressDialog progress;
+        private Context context;
+
+        public getElementAtMiddleThread(Context context) {
+            Log.i(TAG, "Get element in the middle");
+            this.context = context;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            progress = new ProgressDialog(context);
+            progress.setMessage("Starting...");
+            progress.show();
+        }
+
+        protected Integer doInBackground(Void... params) {
+            publishProgress("Transforming Image");
+            //Get mean of U channel of the bitmap
+            Mat imgMat = new Mat();
+            Utils.bitmapToMat(bitmap, imgMat);
+
+            List<Mat> mRgb = new ArrayList<Mat>(3);
+            Core.split(imgMat, mRgb);
+            Mat mB = mRgb.get(2);
+
+            MatOfDouble mu = new MatOfDouble();
+            MatOfDouble sigma = new MatOfDouble();
+            Imgproc.threshold(mB, mB, 130, 255, Imgproc.THRESH_BINARY_INV);
+            Core.meanStdDev(mB, mu, sigma, mB);
+
+            meanBChannel = ImageProcessing.getMeanOfBlueChannelInMat(imgMat);
+
+            //Draw the rectangule to find the ovitrap in the middle
+            mB.convertTo(mB, CvType.CV_8UC1);
+            Mat matBlurCanny = mB.clone();
+
+            Imgproc.blur(matBlurCanny, matBlurCanny, new Size(5, 5));
+            Imgproc.Canny(matBlurCanny, matBlurCanny, 15, 15);
+
+            Imgproc.dilate(matBlurCanny, matBlurCanny, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(30, 30)));
+            Imgproc.erode(matBlurCanny, matBlurCanny, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(30, 30)));
+
+
+            List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+
+            publishProgress("Finding Contours");
+
+            Imgproc.findContours(matBlurCanny, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+
+            org.opencv.core.Point centroidOfImage = new org.opencv.core.Point(matBlurCanny.cols() / 2, matBlurCanny.rows() / 2);
+
+            int indexOfMinDistance = 0;
+            Double min = null;
+
+            for (int idx = 0; idx < contours.size(); idx++) {
+                org.opencv.core.Point centroid = ImageProcessing.getCentroidOfContour(contours.get(idx));
+                double distance = Math.pow(centroid.x - centroidOfImage.x, 2) + Math.pow(centroid.y - centroidOfImage.y, 2);
+                if ((Imgproc.contourArea(contours.get(idx)) > 150) && ((min == null) || (distance < min))) {
+                    indexOfMinDistance = idx;
+                    min = distance;
+                }
+            }
+
+            Log.i(TAG, "index: " + indexOfMinDistance);
+
+            publishProgress("Getting the middle one");
+
+            Mat contour = org.opencv.core.Mat.zeros(imgMat.rows(), imgMat.cols(), CvType.CV_8UC1);
+            Mat ones = org.opencv.core.Mat.ones(imgMat.rows(), imgMat.cols(), CvType.CV_8UC1);
+            Imgproc.drawContours(contour, contours, indexOfMinDistance, new Scalar(255), -1);
+
+            ones.setTo(new Scalar(0), contour);
+            imgMat.setTo(new Scalar(0), ones);
+
+            Utils.matToBitmap(imgMat, bitmap);
+
+
+            contour.release();
+
+            return 1;
+        }
+
+        @Override
+        protected void onProgressUpdate(String... params) {
+            progress.setMessage(params[0]);
+        }
+
+        @Override
+        protected void onPostExecute(Integer post) {
+            Log.i(TAG, "Go to post execute");
+            progress.dismiss();
+            startDrawView();
+        }
     }
 
     //PUBLIC CLASS TO COUNT THE EGGS IN A DIFFERENT THREAD
@@ -568,7 +692,7 @@ public class TelaContagem extends Activity {
                 }
             }
 
-            numberOfEggs = (int) Math.exp(0.6055 * Math.log(areaTotal) -0.1108 * Math.log(meanBChannel));
+            numberOfEggs = (int) Math.exp(0.6055 * Math.log(areaTotal) - 0.1108 * Math.log(meanBChannel));
 
             Log.i(TAG, "area total: " + areaTotal);
 
@@ -807,6 +931,8 @@ public class TelaContagem extends Activity {
             canvas.drawPath(circlePath, paint);
 
             if (isDrawingRec) {
+                canvas.drawCircle(downX, downY, 50, rPaint);
+                canvas.drawCircle(curX, curY, 50, rPaint);
                 canvas.drawRect(downX, downY, curX, curY, rPaint);
             }
 

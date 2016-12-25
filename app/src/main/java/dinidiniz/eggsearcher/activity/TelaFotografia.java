@@ -29,6 +29,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
+import dinidiniz.eggsearcher.Consts;
 import dinidiniz.eggsearcher.functions.CameraPreview;
 import dinidiniz.eggsearcher.R;
 
@@ -209,15 +210,18 @@ public class TelaFotografia extends AppCompatActivity {
             releaseCamera();
             if (GO_TO.equals(GO_TO_CALIBRATE)){
                 intent = new Intent(this, CalibrateActivity.class);
+                intent.putExtra(Consts.UPLOADED_PHOTO, false);
                 startActivity(intent);
                 this.finish();
             } else {
                 if (processSpinnerSelected == 0) {
                     intent = new Intent(this, TelaContagem.class);
+                    intent.putExtra(Consts.UPLOADED_PHOTO, false);
                     startActivity(intent);
                     this.finish();
                 } else {
                     intent = new Intent(this, TelaFullAutomatic.class);
+                    intent.putExtra(Consts.UPLOADED_PHOTO, false);
                     startActivity(intent);
                     this.finish();
                 }

@@ -1,5 +1,6 @@
 package dinidiniz.eggsearcher.activity;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -11,6 +12,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 
 import java.io.ByteArrayOutputStream;
@@ -20,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import dinidiniz.eggsearcher.Consts;
 import dinidiniz.eggsearcher.R;
 import dinidiniz.eggsearcher.helper.Logistic;
 
@@ -28,6 +31,7 @@ import dinidiniz.eggsearcher.helper.Logistic;
  */
 public class TelaInicial extends AppCompatActivity {
 
+    private static final String TAG = TelaInicial.class.getName();
     private static final int SELECT_GO_TO_CALIBRATE = 100;
     private static final int SELECT_GO_TO_COUNT = 200;
     private Intent intent;
@@ -44,9 +48,6 @@ public class TelaInicial extends AppCompatActivity {
         intent = new Intent(view.getContext(), TelaFotografia.class);
         intent.putExtra(TelaFotografia.GO_TO_INTENT, TelaFotografia.GO_TO_COUNT);
         startActivity(intent);
-        //Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
-        //photoPickerIntent.setType("image/*");
-        //startActivityForResult(photoPickerIntent, SELECT_GO_TO_COUNT);
     }
 
 
@@ -56,12 +57,16 @@ public class TelaInicial extends AppCompatActivity {
      * @param requestCode
      * @param resultCode
      * @param imageReturnedIntent
-     */
+     *
+     * ***/
     @Override
     protected void onActivityResult(final int requestCode, int resultCode, final Intent imageReturnedIntent) {
         super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
-
+        Log.i(TAG, "On activity result" );
         if (resultCode == RESULT_OK) {
+        }
+        }
+            /*
                 new AsyncTask<Void, Void, Void>() {
                     private ProgressDialog progressDialog;
 
@@ -88,13 +93,15 @@ public class TelaInicial extends AppCompatActivity {
                                     is.close();
                             }
 
+
                             File mypath = getFileStreamPath("tempIMG.png");
                             mypath.createNewFile();
 
                             FileOutputStream fos = new FileOutputStream(mypath);
-                            bitmap.compress(Bitmap.CompressFormat.PNG, 100 /*ignored for PNG*/, fos);
+                            bitmap.compress(Bitmap.CompressFormat.PNG, 100 , fos);
                             fos.flush();
                             fos.close();
+                            *
 
                             saveScreen();
                         } catch (FileNotFoundException e) {
@@ -112,10 +119,12 @@ public class TelaInicial extends AppCompatActivity {
                         switch (requestCode) {
                             case SELECT_GO_TO_COUNT:
                                 intent = new Intent(TelaInicial.this, TelaContagem.class);
+                                intent.putExtra(Consts.UPLOADED_PHOTO, true);
                                 startActivity(intent);
                                 break;
                             case SELECT_GO_TO_CALIBRATE:
                                 intent = new Intent(TelaInicial.this, CalibrateActivity.class);
+                                intent.putExtra(Consts.UPLOADED_PHOTO, true);
                                 startActivity(intent);
                                 break;
                         }
@@ -124,11 +133,16 @@ public class TelaInicial extends AppCompatActivity {
                 }.execute();
         }
     }
+                    ***/
 
     public void upload(View view) {
-        Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
-        photoPickerIntent.setType("image/*");
-        startActivityForResult(photoPickerIntent, SELECT_GO_TO_COUNT);
+
+        intent = new Intent(TelaInicial.this, TelaContagem.class);
+        intent.putExtra(Consts.UPLOADED_PHOTO, true);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+
     }
 
     public void historic(View view) {
@@ -155,14 +169,14 @@ public class TelaInicial extends AppCompatActivity {
                         intent = new Intent(view.getContext(), TelaFotografia.class);
                         intent.putExtra(TelaFotografia.GO_TO_INTENT, TelaFotografia.GO_TO_CALIBRATE);
                         startActivity(intent);
-                        //Yes button clicked
+                        //Photo button clicked
                         break;
 
                     case DialogInterface.BUTTON_NEGATIVE:
-                        Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
-                        photoPickerIntent.setType("image/*");
-                        startActivityForResult(photoPickerIntent, SELECT_GO_TO_CALIBRATE);
-                        //No button clicked
+                        intent = new Intent(TelaInicial.this, CalibrateActivity.class);
+                        intent.putExtra(Consts.UPLOADED_PHOTO, true);
+                        startActivity(intent);
+                        //Upload button clicked
                         break;
                 }
             }

@@ -182,17 +182,10 @@ public class TelaContagem extends AppCompatActivity {
 
         //Make it sync OpenCV
 
-        if (!OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_2, this, mLoaderCallback)) {
-            Log.e("TEST", "Cannot connect to OpenCV Manager");
-        }
+        //if (!OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_2, this, mLoaderCallback)) {
+        //    Log.e("TEST", "Cannot connect to OpenCV Manager");
+        //}
     }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        //OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_1_0, this, mLoaderCallback);
-    }
-
 
     //Controls bar Moves and Eraser of Canvas
     @Override
@@ -366,6 +359,19 @@ public class TelaContagem extends AppCompatActivity {
         Log.i(TAG, "Activity paused. Bitmap : " + (bitmap == null));
         super.onStop();
 
+    }
+
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+        if (!OpenCVLoader.initDebug()) {
+            Log.d("OpenCV", "Internal OpenCV library not found. Using OpenCV Manager for initialization");
+            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback);
+        } else {
+            Log.d("OpenCV", "OpenCV library found inside package. Using it!");
+            mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
+        }
     }
 
     @Override
@@ -565,35 +571,55 @@ public class TelaContagem extends AppCompatActivity {
             Mat imgMat = new Mat();
             Utils.bitmapToMat(bitmap, imgMat);
 
-            List<Mat> mRgb = new ArrayList<Mat>(3);
-            Core.split(imgMat, mRgb);
-            Mat mB = mRgb.get(2);
+            //List<Mat> mRgb = new ArrayList<Mat>(3);
+            //Core.split(imgMat, mRgb);
+            //Mat mB = mRgb.get(2);
 
-            MatOfDouble mu = new MatOfDouble();
-            MatOfDouble sigma = new MatOfDouble();
-            Imgproc.threshold(mB, mB, 130, 255, Imgproc.THRESH_BINARY_INV);
-            Core.meanStdDev(mB, mu, sigma, mB);
+            //MatOfDouble mu = new MatOfDouble();
+            //MatOfDouble sigma = new MatOfDouble();
+            //Imgproc.threshold(mB, mB, 130, 255, Imgproc.THRESH_BINARY_INV);
+            //Core.meanStdDev(mB, mu, sigma, mB);
 
+            /*
+            Imgproc.cvtColor(imgMat, imgMat, Imgproc.COLOR_BGR2HLS_FULL);
+            List<Mat> mHLS = new ArrayList<Mat>(3);
+            Core.split(imgMat, mHLS);
+            Mat mH = mHLS.get(0);
+
+            Core.MinMaxLocResult minMaxLocResult = Core.minMaxLoc(mH);
+            Log.i(TAG, "index: " + minMaxLocResult.minVal + "  " + minMaxLocResult.maxVal);
+
+            Core.subtract(mH, new Scalar(minMaxLocResult.minVal), mH);
+            Core.multiply(mH, new Scalar(((float) 255) / (minMaxLocResult.maxVal - minMaxLocResult.minVal)), mH);
+
+
+            minMaxLocResult = Core.minMaxLoc(mH);
+            Log.i(TAG, "index: " + minMaxLocResult.minVal + "  " + minMaxLocResult.maxVal);
+
+
+
+            //Get mean of B channel for study porpose
             meanBChannel = ImageProcessing.getMeanOfBlueChannelInMat(imgMat);
 
             //Draw the rectangule to find the ovitrap in the middle
-            mB.convertTo(mB, CvType.CV_8UC1);
-            Mat matBlurCanny = mB.clone();
+            //mH.convertTo(mH, CvType.CV_8UC1);
+            //Mat matBlurCanny = mB.clone();
 
-            Imgproc.blur(matBlurCanny, matBlurCanny, new Size(5, 5));
-            Imgproc.Canny(matBlurCanny, matBlurCanny, 15, 15);
+            Imgproc.Canny(mH, mH, 30, 200);
 
-            Imgproc.dilate(matBlurCanny, matBlurCanny, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(30, 30)));
-            Imgproc.erode(matBlurCanny, matBlurCanny, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(30, 30)));
-
+            Imgproc.dilate(mH, mH, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(15, 15)));
+            //Imgproc.erode(mH, mH, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(1, 1)));
+            //Imgproc.rectangle(mH, new org.opencv.core.Point(0,0), new org.opencv.core.Point(canvasWidth,canvasHeight),new Scalar(255,255,255),20);
+            //Invert the matrix to have points
+            //Core.bitwise_not(mH, mH);
 
             List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
 
             publishProgress("Finding Contours");
 
-            Imgproc.findContours(matBlurCanny, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+            //Imgproc.findContours(mH, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
-            org.opencv.core.Point centroidOfImage = new org.opencv.core.Point(matBlurCanny.cols() / 2, matBlurCanny.rows() / 2);
+            org.opencv.core.Point centroidOfImage = new org.opencv.core.Point(mH.cols() / 2, mH.rows() / 2);
 
             int indexOfMinDistance = 0;
             Double min = null;
@@ -616,12 +642,14 @@ public class TelaContagem extends AppCompatActivity {
             Imgproc.drawContours(contour, contours, indexOfMinDistance, new Scalar(255), -1);
 
             ones.setTo(new Scalar(0), contour);
-            imgMat.setTo(new Scalar(0), ones);
+            //imgMat.setTo(new Scalar(0), ones);
+
 
             Utils.matToBitmap(imgMat, bitmap);
 
 
             contour.release();
+            */
 
             return 1;
         }
@@ -692,7 +720,7 @@ public class TelaContagem extends AppCompatActivity {
                 }
             }
 
-            numberOfEggs = (int) Math.exp(0.6055 * Math.log(areaTotal) - 0.1108 * Math.log(meanBChannel));
+            numberOfEggs = (int) Math.exp(0.5307 * Math.log(areaTotal));
 
             Log.i(TAG, "area total: " + areaTotal);
 

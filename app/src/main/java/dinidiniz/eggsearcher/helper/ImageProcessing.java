@@ -61,6 +61,7 @@ public class ImageProcessing {
         return new Point(x, y);
     }
 
+
     public static int minIndex(List<Double> list) {
         Integer i=0;
         Integer minIndex=-1;

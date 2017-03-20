@@ -4,11 +4,56 @@
     android:layout_height="fill_parent"
     android:orientation="horizontal">
 
+
     <FrameLayout
         android:id="@+id/camera_preview"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:layout_weight="1" />
+
+    <!--Frame to make transparent black wallpaper-->
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="vertical"
+        android:layout_gravity="center|bottom">
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1.5"
+            android:layout_gravity="center|bottom"
+            android:background="@color/TransparentBackground" />
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_gravity="center|bottom">
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:layout_gravity="center|bottom"
+                android:background="@color/TransparentBackground" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:layout_gravity="center|bottom" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:layout_gravity="center|bottom"
+                android:background="@color/TransparentBackground" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1.5"
+            android:background="@color/TransparentBackground"
+            android:layout_gravity="center|bottom"/>
+
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -29,4 +74,6 @@
             android:onClick="CaptureImage"
             android:text="Capture" />
     </LinearLayout>
+
+
 </FrameLayout>

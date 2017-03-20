@@ -92,7 +92,11 @@ public class TelaContagem extends AppCompatActivity {
     int heightOn;
     double meanU;
     double standartDeviationU;
+
+
     int numberOfEggs = 0;
+    int areaTotal = 0;
+
     double[] weights = {1, 1, 1, 1, 1};
     private Boolean seletecToUpload = true;
     //Thouch Events variables
@@ -302,6 +306,7 @@ public class TelaContagem extends AppCompatActivity {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putInt("numberOfEggs", numberOfEggs);
+        editor.putInt("areaTotal", areaTotal);
         editor.commit();
     }
 
@@ -453,9 +458,12 @@ public class TelaContagem extends AppCompatActivity {
             canvasWidth = (int) Math.floor(widthResolution / factor);
             canvasHeight = (int) Math.floor(heightResolution / factor);
         } else {
-            canvasWidth = widthResolution;
-            canvasHeight = heightResolution;
+            //Its change because will rotate after here
+            canvasWidth = heightResolution;
+            canvasHeight = widthResolution;
         }
+
+        Log.i(TAG, "CanvasHeight: " + canvasHeight + " ; canvasWidth: " + canvasWidth);
 
 
         bitmap = getResizedBitmap(bitmap, canvasHeight, canvasWidth);
@@ -688,7 +696,7 @@ public class TelaContagem extends AppCompatActivity {
         protected Integer doInBackground(Void... params) {
             List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
             Mat imgMat = new Mat();
-            double areaTotal = 0;
+            areaTotal = 0;
 
             publishProgress("Thresholding");
             Utils.bitmapToMat(bitmap, imgMat);
@@ -710,7 +718,7 @@ public class TelaContagem extends AppCompatActivity {
                 Mat countour = org.opencv.core.Mat.zeros(imgMat.rows(), imgMat.cols(), CvType.CV_8UC1);
                 // CV_FILLED fills the connected components found
                 Imgproc.drawContours(countour, contours, idx, new Scalar(1), -1);
-                double countourArea = Core.sumElems(countour).val[0];
+                int countourArea = (int) Core.sumElems(countour).val[0];
                 //org.opencv.core.Rect cRect = Imgproc.boundingRect(contours.get(idx));
                 //Mat contour = Imgproc.dilate(cRect);
                 //double contourarea = Imgproc.contourArea(contour);

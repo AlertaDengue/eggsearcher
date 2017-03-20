@@ -28,18 +28,30 @@ public class TelaResultado extends Activity {
     int numberOfEggs;
     int totalNumberOfEggs;
     int sampleNumber;
+    int areaTotal;
     String TAG = "TelaResultado";
     Intent intent;
     int number = 1;
     Set<String> numberOfEggsSamples = new HashSet<String>(1);
+
+
     LinearLayout linearLayoutSamples;
     NumberPicker totalNumberOfEggsView;
+    EditText codeResult;
+    EditText descriptionResult;
+
+
     DBHelper db;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.tela_resultado);
         loadScreen();
+
+        codeResult = (EditText) findViewById(R.id.codeResult);
+        descriptionResult = (EditText) findViewById(R.id.descriptionResult);
+
+        descriptionResult.setText(areaTotal + " area\n\n");
 
         TextView textSampleNumber = (TextView) findViewById(R.id.textSampleNumber);
         textSampleNumber.setText("Sample Number " + sampleNumber);
@@ -109,6 +121,7 @@ public class TelaResultado extends Activity {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         numberOfEggs = sharedPref.getInt("numberOfEggs", 0);
         sampleNumber = sharedPref.getInt("sampleNumber", 1);
+        areaTotal = sharedPref.getInt("areaTotal", 0);
         numberOfEggsSamples = sharedPref.getStringSet("numberOfEggsSamples", numberOfEggsSamples);
         numberOfEggsSamples.add("" + numberOfEggs);
     }
@@ -122,8 +135,6 @@ public class TelaResultado extends Activity {
 
     public void saveScreenResult(){
         db = new DBHelper(this);
-        EditText codeResult = (EditText) findViewById(R.id.codeResult);
-        EditText descriptionResult = (EditText) findViewById(R.id.descriptionResult);
         db.insertSample(codeResult.getText().toString(),totalNumberOfEggsView.getValue(),descriptionResult.getText().toString());
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
 

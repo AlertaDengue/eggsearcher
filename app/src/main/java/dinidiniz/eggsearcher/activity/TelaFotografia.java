@@ -1,9 +1,13 @@
 package dinidiniz.eggsearcher.activity;
 
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Rect;
 import android.hardware.Camera;
 import android.hardware.camera2.*;
 import android.net.Uri;
@@ -12,6 +16,7 @@ import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -21,11 +26,13 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -54,6 +61,8 @@ public class TelaFotografia extends AppCompatActivity {
     private Spinner namePhotoSpinner;
     private String[] namePhotoSpinnerList;
     private Resources res;
+
+    private Camera.Size resolutionChoosen;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -95,6 +104,8 @@ public class TelaFotografia extends AppCompatActivity {
 
         //Start Camera
         startCamera();
+
+
     }
 
     public void getResultParameters(){
@@ -131,8 +142,79 @@ public class TelaFotografia extends AppCompatActivity {
             mPreview = new CameraPreview(this, mCamera);
             preview = (FrameLayout) findViewById(R.id.camera_preview);
             preview.addView(mPreview);
+
+            //Focus everytime someone touch the screen
+            preview.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+
+                    if (mCamera != null) {
+                        //Camera camera = Camera.getCamera();
+                        mCamera.cancelAutoFocus();
+                        Rect focusRect = new Rect(-500,-500,500,500);
+
+                        Camera.Parameters parameters = mCamera.getParameters();
+                        if (parameters.getFocusMode() != Camera.Parameters.FOCUS_MODE_AUTO) {
+                            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+                        }
+                        if (parameters.getMaxNumFocusAreas() > 0) {
+                            List<Camera.Area> mylist = new ArrayList<Camera.Area>();
+                            mylist.add(new Camera.Area(focusRect, 1000));
+                            parameters.setFocusAreas(mylist);
+                        }
+
+                        try {
+                            mCamera.cancelAutoFocus();
+                            mCamera.setParameters(parameters);
+                            mCamera.startPreview();
+                            mCamera.autoFocus(new Camera.AutoFocusCallback() {
+                                @Override
+                                public void onAutoFocus(boolean success, Camera camera) {
+                                    if (camera.getParameters().getFocusMode() != Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE) {
+                                        Camera.Parameters parameters = camera.getParameters();
+                                        parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+                                        if (parameters.getMaxNumFocusAreas() > 0) {
+                                            parameters.setFocusAreas(null);
+                                        }
+
+                                        // Check what resolutions are supported by your camera
+                                        List<Camera.Size> sizes = parameters.getSupportedPictureSizes();
+                                        List<String> resolutionSpinnerList = CameraPreview.getCameraResolutionListWithSizes(sizes);
+
+                                        resolutionChoosen = sizes.get(0);
+
+                                        for (Camera.Size size : sizes) {
+                                            if (resolutionSpinnerList.get(resolutionSpinnerSelected).equals("" + size.height * size.width / 1024000)) {
+                                                Log.i("GetCameraInstance", "Resolution: " + size.width + " " + size.height);
+                                                resolutionChoosen = size;
+                                            }
+                                        }
+
+                                        parameters.setPictureSize(resolutionChoosen.width, resolutionChoosen.height);
+                                        parameters.setExposureCompensation(0);
+                                        parameters.set("metering", "matrix");
+                                        parameters.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_INCANDESCENT);
+                                        parameters.setJpegQuality(100);
+                                        if(namePhotoSpinner.getSelectedItemPosition() == 1) {
+                                            parameters.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
+                                        } else {
+                                            parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+                                        }
+                                        camera.setParameters(parameters);
+                                        camera.startPreview();
+                                    }
+                                }
+                            });
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    return true;
+                }
+            });
         }
     }
+
 
 
     /********************************************************/
@@ -140,10 +222,30 @@ public class TelaFotografia extends AppCompatActivity {
     public void getCameraInstance(){
         mCamera = null;
         try {
-
+            //PUT ALL PARAMETERS HERE
             mCamera = Camera.open(); // attempt to get a Camera instance
+            mCamera.cancelAutoFocus();
             Camera.Parameters params = mCamera.getParameters();
+
+            // Check what resolutions are supported by your camera
+            List<Camera.Size> sizes = params.getSupportedPictureSizes();
+            List<String> resolutionSpinnerList = CameraPreview.getCameraResolutionListWithSizes(sizes);
+
+            resolutionChoosen = sizes.get(0);
+
+            for (Camera.Size size : sizes) {
+                if (resolutionSpinnerList.get(resolutionSpinnerSelected).equals("" + size.height * size.width / 1024000)) {
+                    Log.i("GetCameraInstance", "Resolution: " + size.width + " " + size.height);
+                    resolutionChoosen = size;
+                }
+            }
+
+
+            params.setFocusMode(params.FOCUS_MODE_CONTINUOUS_PICTURE);
             params.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
+
+
+            params.setPictureSize(resolutionChoosen.width, resolutionChoosen.height);
             params.setExposureCompensation(0);
             params.set("metering", "matrix");
             params.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_INCANDESCENT);
@@ -155,20 +257,7 @@ public class TelaFotografia extends AppCompatActivity {
                 params.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
             }
 
-            // Check what resolutions are supported by your camera
-            List<Camera.Size> sizes = params.getSupportedPictureSizes();
-            List<String> resolutionSpinnerList = CameraPreview.getCameraResolutionListWithSizes(sizes);
 
-            Camera.Size mSize = sizes.get(0);
-
-            for (Camera.Size size : sizes) {
-                if (resolutionSpinnerList.get(resolutionSpinnerSelected).equals("" + size.height * size.width / 1024000)) {
-                    Log.i("GetCameraInstance", "Resolution: " + size.width + " " + size.height);
-                    mSize = size;
-                }
-            }
-
-            params.setPictureSize(mSize.width, mSize.height);
 
             mCamera.setParameters(params);
         }
@@ -184,6 +273,15 @@ public class TelaFotografia extends AppCompatActivity {
         public void onPictureTaken(byte[] data, Camera camera) {
 
             //Entra aqui se não há problemas em tirar a foto;
+            Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
+
+            Bitmap croppedBitmap = Bitmap.createBitmap(bmp, resolutionChoosen.width / 3, (int) Math.ceil(resolutionChoosen.height * 1.5 / 4), resolutionChoosen.width/3,
+                    (int) Math.ceil(resolutionChoosen.height/ 4));
+
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            croppedBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+
+            data = stream.toByteArray();
 
             try {
                 OutputStream out = new BufferedOutputStream(new FileOutputStream(filename));
@@ -236,6 +334,34 @@ public class TelaFotografia extends AppCompatActivity {
         Uri contentUri = Uri.fromFile(f);
         mediaScanIntent.setData(contentUri);
         this.sendBroadcast(mediaScanIntent);
+
+    }
+
+    private void performCrop(Uri picUri) {
+        try {
+            Intent cropIntent = new Intent("com.android.camera.action.CROP");
+            // indicate image type and Uri
+            cropIntent.setDataAndType(picUri, "image/*");
+            // set crop properties here
+            cropIntent.putExtra("crop", true);
+            // indicate aspect of desired crop
+            cropIntent.putExtra("aspectX", resolutionChoosen.width/3);
+            cropIntent.putExtra("aspectY", resolutionChoosen.height*1.5/4);
+            // indicate output X and Y
+            cropIntent.putExtra("outputX", resolutionChoosen.width*2/3);
+            cropIntent.putExtra("outputY", resolutionChoosen.height*2.5/4);
+            // retrieve data on return
+            cropIntent.putExtra("return-data", true);
+            // start the activity - we handle returning in onActivityResult
+            startActivityForResult(cropIntent, 1);
+        }
+        // respond to users whose devices do not support the crop action
+        catch (ActivityNotFoundException anfe) {
+            // display an error message
+            String errorMessage = "Whoops - your device doesn't support the crop action!";
+            Toast toast = Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT);
+            toast.show();
+        }
     }
 
 
@@ -282,7 +408,7 @@ public class TelaFotografia extends AppCompatActivity {
         } else {
             Log.d("CDA", "onBackPressed Called");
             Intent setIntent = new Intent(this, TelaInicial.class);
-            setIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            setIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             startActivity(setIntent);}
     }
 

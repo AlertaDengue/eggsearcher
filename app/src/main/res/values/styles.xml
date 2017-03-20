@@ -7,9 +7,15 @@
         <item name="colorAccent">@android:color/holo_green_dark</item>
     </style>
 
+
+
     <style name="MyEditText" parent="Base.Widget.AppCompat.EditText">
         <item name="android:background">@drawable/edittextborder</item>
         <item name="android:textColor">#000000</item>
     </style>
+
+    <!--Colors-->
+
+    <color name="TransparentBackground">#8000 </color>
 
 </resources>

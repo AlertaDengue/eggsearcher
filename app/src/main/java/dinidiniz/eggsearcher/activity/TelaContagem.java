@@ -29,6 +29,7 @@ import android.widget.CheckBox;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.ToggleButton;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
@@ -66,11 +67,11 @@ public class TelaContagem extends AppCompatActivity {
     float downX, downY;
     float curX, curY;
     boolean started = false;
-    CheckBox erasorCheckBox;
+    ToggleButton erasorCheckBox;
+    ToggleButton cropToggleButton;
     Point size;
     //Global variables to draw
     String filePath;
-    boolean isDrawingRec = false;
     DrawView drawView;
     int canvasHeight;
     int canvasWidth;
@@ -181,7 +182,8 @@ public class TelaContagem extends AppCompatActivity {
         //Control Scroll Views
         vScroll = (ScrollView) findViewById(R.id.vScroll);
         hScroll = (HorizontalScrollView) findViewById(R.id.hScroll);
-        erasorCheckBox = (CheckBox) findViewById(R.id.erasorCheckBox);
+        erasorCheckBox = (ToggleButton) findViewById(R.id.eraserToggleButton);
+        cropToggleButton = (ToggleButton) findViewById(R.id.cropToggleButton);
 
 
         //Make it sync OpenCV
@@ -227,7 +229,6 @@ public class TelaContagem extends AppCompatActivity {
                     downX = (int) (event.getX() + hScroll.getScrollX());
                     mY = (int) (event.getY() + vScroll.getScrollY());
                     downY = (int) (event.getY() + vScroll.getScrollY());
-                    startTime = event.getEventTime();
 
                     return returnMoveEvent;
 
@@ -235,24 +236,9 @@ public class TelaContagem extends AppCompatActivity {
                     curX = (int) (event.getX() + hScroll.getScrollX());
                     curY = (int) (event.getY() + vScroll.getScrollY());
 
-                    if (!isDrawingRec) {
-                        if (started) {
-                            curTime = event.getEventTime();
-                            float dx = Math.abs(curX - downX);
-                            float dy = Math.abs(curY - downY);
-
-                            if (dx < TOUCH_TOLERANCE || dy < TOUCH_TOLERANCE || !isDrawingRec) {
-                                if (curTime - startTime > 1350) {
-                                    isDrawingRec = true;
-                                }
-                            }
-                            started = false;
-                        } else {
-                            vScroll.scrollBy(0, (int) (mY - curY));
-                            hScroll.scrollBy((int) (mX - curX), 0);
-                        }
-                        mX = curX;
-                        mY = curY;
+                    if (!cropToggleButton.isChecked()) {
+                        vScroll.scrollBy(0, (int) (mY - curY));
+                        hScroll.scrollBy((int) (mX - curX), 0);
                     } else {
                         drawView.toInvalidate();
                         if ((event.getX()) / size.x > 0.9 || (event.getY()) / size.y > 0.9 || (event.getX()) / size.x < 0.1 || (event.getY()) / size.y < 0.1) {
@@ -266,17 +252,20 @@ public class TelaContagem extends AppCompatActivity {
                     return returnMoveEvent;
 
                 case MotionEvent.ACTION_UP:
-                    if (isDrawingRec) {
-                        float dxNew = curX - downX;
-                        float dyNew = curY - downY;
+                    if (cropToggleButton.isChecked()) {
+                        curX = (int) (event.getX() + hScroll.getScrollX());
+                        curY = (int) (event.getY() + vScroll.getScrollY());
 
-                        if (dxNew > TOUCH_TOLERANCE && dyNew > TOUCH_TOLERANCE) {
-                            if (curX > bitmap.getWidth()) {
-                                curX = bitmap.getWidth();
+                        Log.i(TAG, curX + " " + curY + " " + downX + " " + downY);
+
+                        if (meetConditionsForCrop()) {
+                            if (curX > canvasWidth) {
+                                curX = canvasWidth;
                             }
-                            if (curY > bitmap.getHeight()) {
-                                curY = bitmap.getHeight();
+                            if (curY > canvasHeight) {
+                                curY = canvasHeight;
                             }
+                            Log.i(TAG, curX + " " + curY + " " + downX + " " + downY);
                             bitmap = Bitmap.createBitmap(loadBitmapFromView(drawView), (int) downX, (int) downY, (int) (curX - downX), (int) (curY - downY));
                             canvasWidth = (int) Math.abs(downX - curX);
                             canvasHeight = (int) Math.abs(downY - curY);
@@ -284,8 +273,6 @@ public class TelaContagem extends AppCompatActivity {
                             startDrawView();
                         }
                     }
-                    isDrawingRec = false;
-                    started = true;
                     return returnMoveEvent;
             }
         }
@@ -318,6 +305,15 @@ public class TelaContagem extends AppCompatActivity {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.MATCH_PARENT));
         linearLayout.addView(drawView, canvasWidth, canvasHeight);
+    }
+
+    private Boolean meetConditionsForCrop(){
+        if (curX - downX > TOUCH_TOLERANCE && curY - downY > TOUCH_TOLERANCE && (curX - downX) > 50 && (curY - downY) > 50 && cropToggleButton.isChecked()) {
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     //Resize Bitmap
@@ -406,6 +402,12 @@ public class TelaContagem extends AppCompatActivity {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+                } else {
+                    Log.i(TAG, "cancelled");
+                    Intent setIntent = new Intent(this, TelaInicial.class);
+                    setIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    startActivity(setIntent);
+                    this.finish();
                 }
                 break;
         }
@@ -966,9 +968,7 @@ public class TelaContagem extends AppCompatActivity {
 
             canvas.drawPath(circlePath, paint);
 
-            if (isDrawingRec) {
-                canvas.drawCircle(downX, downY, 50, rPaint);
-                canvas.drawCircle(curX, curY, 50, rPaint);
+            if (meetConditionsForCrop()) {
                 canvas.drawRect(downX, downY, curX, curY, rPaint);
             }
 

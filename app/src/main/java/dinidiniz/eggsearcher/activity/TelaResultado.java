@@ -1,11 +1,20 @@
 package dinidiniz.eggsearcher.activity;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.preference.PreferenceManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -14,11 +23,14 @@ import android.widget.LinearLayout;
 import android.widget.NumberPicker;
 import android.widget.TextView;
 
+import com.google.android.gms.location.LocationListener;
+
 import java.util.HashSet;
 import java.util.Set;
 
 import dinidiniz.eggsearcher.R;
 import dinidiniz.eggsearcher.SQL.DBHelper;
+import dinidiniz.eggsearcher.helper.Coordinates;
 
 /**
  * Created by leon on 11/11/15.
@@ -39,6 +51,7 @@ public class TelaResultado extends Activity {
     NumberPicker totalNumberOfEggsView;
     EditText codeResult;
     EditText descriptionResult;
+    EditText dateEditText;
 
 
     DBHelper db;
@@ -50,6 +63,8 @@ public class TelaResultado extends Activity {
 
         codeResult = (EditText) findViewById(R.id.codeResult);
         descriptionResult = (EditText) findViewById(R.id.descriptionResult);
+        dateEditText = (EditText) findViewById(R.id.dateEditText);
+
 
         descriptionResult.setText(areaTotal + " area\n\n");
 
@@ -130,26 +145,14 @@ public class TelaResultado extends Activity {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putStringSet("numberOfEggsSamples", numberOfEggsSamples);
-        editor.commit();
-    }
-
-    public void saveScreenResult(){
-        db = new DBHelper(this);
-        db.insertSample(codeResult.getText().toString(),totalNumberOfEggsView.getValue(),descriptionResult.getText().toString());
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putStringSet("numberOfEggsSamples", new HashSet<String>(1));
-        editor.putInt("sampleNumber", sampleNumber + 1);
-        editor.commit();
-
+        editor.apply();
     }
 
     public void saveScreenBackPress(){
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putStringSet("numberOfEggsSamples", new HashSet<String>(1));
-        editor.commit();
+        editor.apply();
 
     }
 
@@ -160,8 +163,13 @@ public class TelaResultado extends Activity {
         startActivity(intent);
     }
 
+    public void getCoordinates(){
+        Coordinates coordinates = new Coordinates(this, codeResult.getText().toString(),
+                totalNumberOfEggsView.getValue(),descriptionResult.getText().toString(), dateEditText.getText().toString(), sampleNumber);
+    }
+
     public void saveResult(View view){
-        saveScreenResult();
+        getCoordinates();
         intent = new Intent(this,TelaInicial.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NO_HISTORY);
         startActivity(intent);

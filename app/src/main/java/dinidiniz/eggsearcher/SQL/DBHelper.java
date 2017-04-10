@@ -6,9 +6,14 @@ import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.opencsv.CSVWriter;
+
+import java.io.File;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +32,10 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String SAMPLES_COLUMN_ID = "id";
     public static final String SAMPLES_COLUMN_CODE = "code";
     public static final String SAMPLES_COLUMN_EGGS = "eggs";
+    public static final String SAMPLES_COLUMN_CREATEDAT = "createdat";
+    public static final String SAMPLES_COLUMN_DATEONFIELD = "dateonfield";
+    public static final String SAMPLES_COLUMN_LAT = "latitude";
+    public static final String SAMPLES_COLUMN_LNG = "longitude";
     public static final String SAMPLES_COLUMN_DESCRIPTION = "description";
 
     public static final String CONTOURS_TABLE_NAME = "contours";
@@ -63,7 +72,10 @@ public class DBHelper extends SQLiteOpenHelper {
         db.execSQL(
                 "create table if not exists " + SAMPLES_TABLE_NAME + "(" + SAMPLES_COLUMN_ID
                 + " integer primary key autoincrement, " + SAMPLES_COLUMN_CODE + " text, "
-                + SAMPLES_COLUMN_EGGS + " integer not null, " + SAMPLES_COLUMN_DESCRIPTION + " text)"
+                + SAMPLES_COLUMN_EGGS + " integer not null, " + SAMPLES_COLUMN_DESCRIPTION
+                + " text, " + SAMPLES_COLUMN_DATEONFIELD + " datetime, " + SAMPLES_COLUMN_LAT
+                + " decimal(9,6), " + SAMPLES_COLUMN_LNG + " decimal(9,6), " + SAMPLES_COLUMN_CREATEDAT
+                + "datetime default current_timestamp)"
         );
 
         db.execSQL(
@@ -87,17 +99,22 @@ public class DBHelper extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         // TODO Auto-generated method stub
-        db.execSQL("DROP TABLE IF EXISTS SAMPLES");
+        db.execSQL("DROP TABLE IF EXISTS " + SAMPLES_TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + CONTOURS_TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + PIXEL_TABLE_NAME);
         onCreate(db);
     }
 
-    public boolean insertSample  (String code, int eggs, String description)
+    public boolean insertSample  (String code, int eggs, String description, double lng, double lat, String dateOnField)
     {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
-        contentValues.put("code", code);
-        contentValues.put("eggs", eggs);
-        contentValues.put("description", description);
+        contentValues.put(SAMPLES_COLUMN_CODE, code);
+        contentValues.put(SAMPLES_COLUMN_EGGS, eggs);
+        contentValues.put(SAMPLES_COLUMN_DESCRIPTION, description);
+        contentValues.put(SAMPLES_COLUMN_LAT, lat);
+        contentValues.put(SAMPLES_COLUMN_LNG, lng);
+        contentValues.put(SAMPLES_COLUMN_DATEONFIELD, dateOnField);
         db.insert("SAMPLES", null, contentValues);
         db.close();
         return true;
@@ -268,5 +285,41 @@ public class DBHelper extends SQLiteOpenHelper {
         res.close();
         return finalArrayList;
     }
+
+    public File exportDB() {
+
+        File exportDir = new File(Environment.getExternalStorageDirectory(), "");
+        if (!exportDir.exists()) {
+            exportDir.mkdirs();
+        }
+
+        File file = new File(exportDir, "csv_eggsearcher.csv");
+        try {
+            file.delete();
+            file.createNewFile();
+            CSVWriter csvWrite = new CSVWriter(new FileWriter(file));
+            SQLiteDatabase db = this.getReadableDatabase();
+            Cursor curCSV = db.rawQuery("SELECT * FROM " + DBHelper.SAMPLES_TABLE_NAME, null);
+            csvWrite.writeNext(curCSV.getColumnNames());
+            int numberColumns = curCSV.getColumnCount();
+            while (curCSV.moveToNext()) {
+                //Which column you want to exprort
+                ArrayList<String> listStr = new ArrayList<String>();
+                for(int i = 0; i < numberColumns; i++){
+                    listStr.add(curCSV.getString(i));
+                }
+                String arrStr[] = new String[listStr.size()];
+                arrStr =  listStr.toArray(arrStr);
+                csvWrite.writeNext(arrStr);
+            }
+            csvWrite.close();
+            curCSV.close();
+        } catch (Exception sqlEx) {
+            Log.e("MainActivity", sqlEx.getMessage(), sqlEx);
+        }
+
+        return file;
+    }
+
 
 }

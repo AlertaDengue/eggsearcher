@@ -39,11 +39,13 @@ public class TelaConfiguracao extends Activity {
     private Spinner thresholdSpinner;
     private Spinner processSpinner;
     private Spinner resolutionSpinner;
+    private Spinner photoAreaSpinner;
     private NumberPicker heightFromLentsNumberPicker;
     private int thresholdSpinnerSelected;
     private int processSpinnerSelected;
     private int heightFromLentsNumberPickerSelected;
     private int resolutionSpinnerSelected;
+    private int photoAreaSpinnerSelected;
     private Resources res;
     private CheckBox flashCheckBox;
     private Boolean flashChackBoxSelected;
@@ -105,6 +107,21 @@ public class TelaConfiguracao extends Activity {
 
         resolutionSpinner.setSelection(resolutionSpinnerSelected);
 
+        //PHOTO AREA SPINNER
+
+        photoAreaSpinner = (Spinner) findViewById(R.id.photoAreaSpinner);
+        String[] photoAreaSpinnerList = res.getStringArray(R.array.photoAreaSpinnerList);
+
+        ArrayAdapter<String> photoAreaDataAdapter = new ArrayAdapter<String>
+                (this, R.layout.simple_spinner, photoAreaSpinnerList);
+
+        photoAreaDataAdapter.setDropDownViewResource
+                (android.R.layout.simple_spinner_dropdown_item);
+
+        photoAreaSpinner.setAdapter(photoAreaDataAdapter);
+
+        photoAreaSpinner.setSelection(photoAreaSpinnerSelected);
+
 
         //HEIGHT NUMBER PICKER
 
@@ -149,6 +166,7 @@ public class TelaConfiguracao extends Activity {
         editor.putInt("processSpinnerSelected", processSpinner.getSelectedItemPosition());
         editor.putInt("heightFromLentsNumberPickerSelected", heightFromLentsNumberPicker.getValue());
         editor.putInt("resolutionSpinnerSelected", resolutionSpinner.getSelectedItemPosition());
+        editor.putInt("photoAreaSpinnerSelected", photoAreaSpinner.getSelectedItemPosition());
         editor.putLong(WEIGHT_LOGISTIC_R, Double.doubleToRawLongBits(weights[0]));
         editor.putLong(WEIGHT_LOGISTIC_G, Double.doubleToRawLongBits(weights[1]));
         editor.putLong(WEIGHT_LOGISTIC_B, Double.doubleToRawLongBits(weights[2]));
@@ -163,6 +181,7 @@ public class TelaConfiguracao extends Activity {
         thresholdSpinnerSelected = sharedPref.getInt("thresholdSpinnerSelected", 0);
         processSpinnerSelected = sharedPref.getInt("processSpinnerSelected", 0);
         resolutionSpinnerSelected = sharedPref.getInt("resolutionSpinnerSelected", 0);
+        photoAreaSpinnerSelected = sharedPref.getInt("photoAreaSpinnerSelected", 0);
         heightFromLentsNumberPickerSelected = sharedPref.getInt("heightFromLentsNumberPickerSelected", 12);
         weights[0] = Double.longBitsToDouble(sharedPref.getLong(WEIGHT_LOGISTIC_R, 1));
         weights[1] = Double.longBitsToDouble(sharedPref.getLong(WEIGHT_LOGISTIC_G, 1));

@@ -32,12 +32,21 @@
         android:gravity="center"
         android:orientation="horizontal">
 
-        <CheckBox
-            android:id="@+id/erasorCheckBox"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="10dp"
-            android:text="Eraser"/>
+        <ToggleButton
+            android:background="@drawable/eraser_toggle"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:textOff=""
+            android:textOn=""
+            android:id="@+id/eraserToggleButton" />
+        
+        <ToggleButton
+            android:background="@drawable/crop_toggle"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:textOff=""
+            android:textOn=""
+            android:id="@+id/cropToggleButton" />
 
         <Button
             android:id="@+id/button_Thresholding"

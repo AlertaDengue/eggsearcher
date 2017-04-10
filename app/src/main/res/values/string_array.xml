@@ -9,6 +9,12 @@
         <item>80</item>
     </string-array>
 
+    <string-array name="photoAreaSpinnerList">
+        <item>1:16</item>
+        <item>1:9</item>
+        <item>1:4</item>
+    </string-array>
+
     <string-array name="processSpinnerList">
         <item>SEMI-AUTOMATIC</item>
         <item>FULL-AUTOMATIC</item>

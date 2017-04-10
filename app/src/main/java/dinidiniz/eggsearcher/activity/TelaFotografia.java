@@ -22,6 +22,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -39,6 +40,7 @@ import java.util.List;
 import dinidiniz.eggsearcher.Consts;
 import dinidiniz.eggsearcher.functions.CameraPreview;
 import dinidiniz.eggsearcher.R;
+import dinidiniz.eggsearcher.helper.Gallery;
 
 
 public class TelaFotografia extends AppCompatActivity {
@@ -58,6 +60,8 @@ public class TelaFotografia extends AppCompatActivity {
     private int processSpinnerSelected;
     private int resolutionSpinnerSelected;
     private int namePhotoSpinnerSelected;
+    private int photoAreaSpinnerSelected;
+    private float photoAreaWeight;
     private Spinner namePhotoSpinner;
     private String[] namePhotoSpinnerList;
     private Resources res;
@@ -70,11 +74,27 @@ public class TelaFotografia extends AppCompatActivity {
         setContentView(R.layout.tela_fotografia);
 
         res = getResources();
+
         //Get Intent sent
         GO_TO = getIntent().getExtras().getInt(GO_TO_INTENT);
 
         //Load Screen
         loadScreen();
+
+        //Change photo area conforms configuration
+        LinearLayout photoArea1LinearLayout = (LinearLayout) findViewById(R.id.photoArea1LinearLayout);
+        LinearLayout photoArea2LinearLayout = (LinearLayout) findViewById(R.id.photoArea2LinearLayout);
+        LinearLayout photoArea3LinearLayout = (LinearLayout) findViewById(R.id.photoArea3LinearLayout);
+        LinearLayout photoArea4LinearLayout = (LinearLayout) findViewById(R.id.photoArea4LinearLayout);
+
+        LinearLayout[] photoAreaLinearLayoutList = {photoArea1LinearLayout, photoArea2LinearLayout, photoArea3LinearLayout,photoArea4LinearLayout};
+
+
+        for (LinearLayout photoAreaLinearLayout : photoAreaLinearLayoutList) {
+            LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) photoAreaLinearLayout.getLayoutParams();
+            params.weight = photoAreaWeight;
+            photoAreaLinearLayout.setLayoutParams(params);
+        }
 
         //Spinner Photo
         namePhotoSpinner = (Spinner) findViewById(R.id.namePhotoSpinner);
@@ -110,7 +130,7 @@ public class TelaFotografia extends AppCompatActivity {
 
     public void getResultParameters(){
         try {
-            File storageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/eggSearcher/");
+            File storageDir = new File(Consts.getImagePath());
             if (!storageDir.exists()) {
                 storageDir.mkdirs();
             }
@@ -120,7 +140,7 @@ public class TelaFotografia extends AppCompatActivity {
             } else {
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
                 String currentDateandTime = sdf.format(new Date());
-                filename = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/eggSearcher/" + namePhotoSpinner.getSelectedItem() + "_" + currentDateandTime + ".png";
+                filename = Consts.getImagePath() + namePhotoSpinner.getSelectedItem() + "_" + currentDateandTime + ".png";
             }
         } catch (Exception e) {
             Log.i(TAG, "cant get address");
@@ -287,7 +307,7 @@ public class TelaFotografia extends AppCompatActivity {
                 OutputStream out = new BufferedOutputStream(new FileOutputStream(filename));
                 out.write(data);
                 out.close();
-                galleryAddPic(filename);
+                Gallery.galleryAddPic(getApplicationContext(), filename);
             } catch (IOException ioe) {
                 ioe.printStackTrace();
             }
@@ -326,42 +346,6 @@ public class TelaFotografia extends AppCompatActivity {
             }
         }
 
-    }
-
-    private void galleryAddPic(String filepath) {
-        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-        File f = new File(filepath);
-        Uri contentUri = Uri.fromFile(f);
-        mediaScanIntent.setData(contentUri);
-        this.sendBroadcast(mediaScanIntent);
-
-    }
-
-    private void performCrop(Uri picUri) {
-        try {
-            Intent cropIntent = new Intent("com.android.camera.action.CROP");
-            // indicate image type and Uri
-            cropIntent.setDataAndType(picUri, "image/*");
-            // set crop properties here
-            cropIntent.putExtra("crop", true);
-            // indicate aspect of desired crop
-            cropIntent.putExtra("aspectX", resolutionChoosen.width/3);
-            cropIntent.putExtra("aspectY", resolutionChoosen.height*1.5/4);
-            // indicate output X and Y
-            cropIntent.putExtra("outputX", resolutionChoosen.width*2/3);
-            cropIntent.putExtra("outputY", resolutionChoosen.height*2.5/4);
-            // retrieve data on return
-            cropIntent.putExtra("return-data", true);
-            // start the activity - we handle returning in onActivityResult
-            startActivityForResult(cropIntent, 1);
-        }
-        // respond to users whose devices do not support the crop action
-        catch (ActivityNotFoundException anfe) {
-            // display an error message
-            String errorMessage = "Whoops - your device doesn't support the crop action!";
-            Toast toast = Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT);
-            toast.show();
-        }
     }
 
 
@@ -425,6 +409,11 @@ public class TelaFotografia extends AppCompatActivity {
         namePhotoSpinnerSelected = sharedPref.getInt("namePhotoSpinnerSelected", 0);
         processSpinnerSelected = sharedPref.getInt("processSpinnerSelected", 0);
         resolutionSpinnerSelected = sharedPref.getInt("resolutionSpinnerSelected", 0);
+
+        photoAreaSpinnerSelected = sharedPref.getInt("photoAreaSpinnerSelected", 0);
+        String[] photoAreaSpinnerList = res.getStringArray(R.array.photoAreaSpinnerList);
+        String areaPhoto = photoAreaSpinnerList[photoAreaSpinnerSelected];
+        photoAreaWeight = (float) (Math.sqrt(Integer.parseInt(areaPhoto.substring(areaPhoto.lastIndexOf(':') + 1))) -1 )/2;
     }
 
 

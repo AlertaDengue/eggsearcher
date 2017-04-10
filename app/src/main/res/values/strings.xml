@@ -3,4 +3,7 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="email_subject">Histórico Eggsearcher</string>
+    <string name="email_text">Email com anexo referente ao histórico de contagens de ovos do aplicativo Eggseacher</string>
+    <string name="cant_access_location">Não é possível acessar localização</string>
 </resources>

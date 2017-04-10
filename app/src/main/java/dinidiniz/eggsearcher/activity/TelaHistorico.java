@@ -1,14 +1,18 @@
 package dinidiniz.eggsearcher.activity;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -111,5 +115,22 @@ public class TelaHistorico extends Activity {
 
             headHistorico.addView(linearLayoutSingleSampleTotal);
         }
+    }
+
+    public void sendEmail(View view){
+        Resources res = getResources();
+        DBHelper db = new DBHelper(this);
+        File attachment = db.exportDB();
+
+        String subject = res.getString(R.string.email_subject);
+        String text = res.getString(R.string.email_text);
+
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        intent.putExtra(Intent.EXTRA_SUBJECT, subject);
+        intent.putExtra(Intent.EXTRA_TEXT, text);
+        intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(attachment));
+
+        startActivity(Intent.createChooser(intent, "Send email..."));
     }
 }

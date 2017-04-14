@@ -1,7 +1,5 @@
 package dinidiniz.eggsearcher.activity;
 
-import android.content.ActivityNotFoundException;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
@@ -9,10 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.hardware.Camera;
-import android.hardware.camera2.*;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -25,6 +20,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -45,7 +41,6 @@ import dinidiniz.eggsearcher.helper.Gallery;
 
 public class TelaFotografia extends AppCompatActivity {
 
-    private int stateCaptureButton = 0;
     public static final String GO_TO_INTENT = "goto";
     public static final Integer GO_TO_COUNT = 0;
     public static final Integer GO_TO_CALIBRATE = 1;
@@ -53,7 +48,8 @@ public class TelaFotografia extends AppCompatActivity {
     private Integer GO_TO;
     private Camera mCamera;
     private CameraPreview mPreview;
-    String TAG = "TelaFotografia";
+    private boolean alreadyAccessed = false;
+    String TAG = TelaFotografia.class.getName();
     Intent intent;
     FrameLayout preview;
     String filename;
@@ -65,6 +61,7 @@ public class TelaFotografia extends AppCompatActivity {
     private Spinner namePhotoSpinner;
     private String[] namePhotoSpinnerList;
     private Resources res;
+    private ToggleButton captureToggleButton;
 
     private Camera.Size resolutionChoosen;
 
@@ -72,6 +69,8 @@ public class TelaFotografia extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.tela_fotografia);
+
+        captureToggleButton = (ToggleButton) findViewById(R.id.captureToggleButton);
 
         res = getResources();
 
@@ -113,7 +112,9 @@ public class TelaFotografia extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 releaseCamera();
-                preview.removeView(mPreview);
+                if (mPreview != null) {
+                    preview.removeView(mPreview);
+                }
                 startCamera();
             }
 
@@ -312,40 +313,44 @@ public class TelaFotografia extends AppCompatActivity {
                 ioe.printStackTrace();
             }
 
-            camera.startPreview();
+            goToNextScreen();
         }
     };
 
 
     public void CaptureImage(View view) {
-        Button captureImage = (Button) findViewById(R.id.button_capture);
-        if (stateCaptureButton == 0) {
-            mCamera.takePicture(null, null, mPicture);
-            captureImage.setText("Next");
-            stateCaptureButton = 1;
-        } else{
-            saveScreen();
-            releaseCamera();
-            if (GO_TO.equals(GO_TO_CALIBRATE)){
-                intent = new Intent(this, CalibrateActivity.class);
+
+        if (!alreadyAccessed) {
+            alreadyAccessed = true;
+            if (captureToggleButton.isChecked()) {
+                mCamera.takePicture(null, null, mPicture);
+                captureToggleButton.setChecked(true);
+            }
+        }
+
+    }
+
+    public void goToNextScreen(){
+        saveScreen();
+        releaseCamera();
+        if (GO_TO.equals(GO_TO_CALIBRATE)){
+            intent = new Intent(this, CalibrateActivity.class);
+            intent.putExtra(Consts.UPLOADED_PHOTO, false);
+            startActivity(intent);
+            this.finish();
+        } else {
+            if (processSpinnerSelected == 0) {
+                intent = new Intent(this, TelaContagem.class);
                 intent.putExtra(Consts.UPLOADED_PHOTO, false);
                 startActivity(intent);
                 this.finish();
             } else {
-                if (processSpinnerSelected == 0) {
-                    intent = new Intent(this, TelaContagem.class);
-                    intent.putExtra(Consts.UPLOADED_PHOTO, false);
-                    startActivity(intent);
-                    this.finish();
-                } else {
-                    intent = new Intent(this, TelaFullAutomatic.class);
-                    intent.putExtra(Consts.UPLOADED_PHOTO, false);
-                    startActivity(intent);
-                    this.finish();
-                }
+                intent = new Intent(this, TelaFullAutomatic.class);
+                intent.putExtra(Consts.UPLOADED_PHOTO, false);
+                startActivity(intent);
+                this.finish();
             }
         }
-
     }
 
 
@@ -383,17 +388,6 @@ public class TelaFotografia extends AppCompatActivity {
             mCamera.release();        // release the camera for other applications
             mCamera = null;
         }
-    }
-
-    public void onBackPressed() {
-        Button captureImage = (Button) findViewById(R.id.button_capture);
-        if (captureImage.getText().toString().equals("Next")) {
-            captureImage.setText("Capture");
-        } else {
-            Log.d("CDA", "onBackPressed Called");
-            Intent setIntent = new Intent(this, TelaInicial.class);
-            setIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            startActivity(setIntent);}
     }
 
     public void saveScreen(){

@@ -25,7 +25,6 @@ import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -38,10 +37,8 @@ import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfDouble;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Scalar;
-import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.FileNotFoundException;
@@ -58,7 +55,6 @@ import javax.microedition.khronos.egl.EGLDisplay;
 
 import dinidiniz.eggsearcher.Consts;
 import dinidiniz.eggsearcher.R;
-import dinidiniz.eggsearcher.helper.ImageProcessing;
 
 public class TelaContagem extends AppCompatActivity {
 
@@ -193,6 +189,14 @@ public class TelaContagem extends AppCompatActivity {
         //}
     }
 
+    public void onBackPressed() {
+        Log.d(TAG, "onBackPressed Called");
+        Intent setIntent = new Intent(this, TelaInicial.class);
+        setIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(setIntent);
+    }
+
+
     //Controls bar Moves and Eraser of Canvas
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -270,6 +274,7 @@ public class TelaContagem extends AppCompatActivity {
                             canvasWidth = (int) Math.abs(downX - curX);
                             canvasHeight = (int) Math.abs(downY - curY);
                             linearLayout.removeView(drawView);
+                            cropToggleButton.setChecked(false);
                             startDrawView();
                         }
                     }
@@ -307,11 +312,10 @@ public class TelaContagem extends AppCompatActivity {
         linearLayout.addView(drawView, canvasWidth, canvasHeight);
     }
 
-    private Boolean meetConditionsForCrop(){
+    private Boolean meetConditionsForCrop() {
         if (curX - downX > TOUCH_TOLERANCE && curY - downY > TOUCH_TOLERANCE && (curX - downX) > 50 && (curY - downY) > 50 && cropToggleButton.isChecked()) {
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }
@@ -363,8 +367,7 @@ public class TelaContagem extends AppCompatActivity {
     }
 
     @Override
-    protected void onResume()
-    {
+    protected void onResume() {
         super.onResume();
         if (!OpenCVLoader.initDebug()) {
             Log.d("OpenCV", "Internal OpenCV library not found. Using OpenCV Manager for initialization");
@@ -530,13 +533,13 @@ public class TelaContagem extends AppCompatActivity {
         weights[4] = Double.longBitsToDouble(sharedPref.getLong(TelaConfiguracao.WEIGHT_LOGISTIC_MEANB, 1));
 
         //GET PICTURE WITH FILEPATH AND PUT IT IN BITMAP AND GET THE RIGHT SIZES OF THE CANVAS
-        filePath = sharedPref.getString("imagepath", "/");
+        filePath = sharedPref.getString(Consts.imagepath, "/");
 
         //GET HEIGHT OF THE PICTURE THAT WAS TAKEN
-        heightOn = sharedPref.getInt("heightFromLentsNumberPickerSelected", 12);
+        heightOn = sharedPref.getInt(Consts.heightFromLentsNumberPickerSelected, 12);
 
         //GET THRESHOLD LEVEL SELECTED
-        int thresholdSpinnerSelected = sharedPref.getInt("thresholdSpinnerSelected", 0);
+        int thresholdSpinnerSelected = sharedPref.getInt(Consts.thresholdSpinnerSelected, 0);
         String valueString = res.getStringArray(R.array.thresholdSpinnerList)[thresholdSpinnerSelected];
         thresholdOn = Integer.parseInt(valueString);
 

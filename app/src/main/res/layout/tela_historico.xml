@@ -2,66 +2,73 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <ScrollView
+    <LinearLayout
+        android:id="@+id/headerHistoricLinearLayout"
         android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/rectangule_background">
+
+        <TextView
+            android:layout_width="@dimen/widget_adapter"
+            android:layout_height="wrap_content"
+            android:layout_gravity="left|center_vertical"
+            android:layout_marginLeft="10dip"
+            android:gravity="center"
+            android:singleLine="true"
+            android:text="ID"
+            android:textColor="#000000"
+            android:textSize="28sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="left|center_vertical"
+            android:layout_marginLeft="10dip"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:text="CODE"
+            android:textAlignment="gravity"
+            android:textColor="#000000"
+            android:textSize="28sp" />
+
+        <TextView
+            android:layout_width="@dimen/widget_adapter"
+            android:layout_height="wrap_content"
+            android:layout_gravity="left|center_vertical"
+            android:layout_marginLeft="10dip"
+            android:gravity="center"
+            android:singleLine="true"
+            android:text="EGGS"
+            android:textAlignment="gravity"
+            android:textColor="#000000"
+            android:textSize="28sp" />
+
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/historicListView"
+        android:layout_width="match_parent"
+        android:layout_below="@+id/headerHistoricLinearLayout"
         android:layout_height="wrap_content">
 
-        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-            android:id="@+id/headHistorico"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+    </ListView>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/edittextborder">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="left|center_vertical"
-                    android:layout_marginLeft="10dip"
-                    android:singleLine="true"
-                    android:text="ID"
-                    android:textColor="#000000"
-                    android:textSize="28sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="left|center_vertical"
-                    android:layout_marginLeft="10dip"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:singleLine="true"
-                    android:text="CODE"
-                    android:textAlignment="gravity"
-                    android:textColor="#000000"
-                    android:textSize="28sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="left|center_vertical"
-                    android:layout_marginLeft="10dip"
-                    android:gravity="right"
-                    android:singleLine="true"
-                    android:text="EGGS"
-                    android:textAlignment="gravity"
-                    android:textColor="#000000"
-                    android:textSize="28sp" />
-
-            </LinearLayout>
-
-        </LinearLayout>
-    </ScrollView>
     <Button
-        android:layout_width="100dp"
-        android:layout_height="100dp"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_margin="40dp"
+        android:background="@drawable/trash"
+        android:onClick="deleteTableSamples" />
+
+    <Button
+        android:layout_width="80dp"
+        android:layout_height="80dp"
         android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
         android:layout_margin="50dp"
         android:background="@drawable/mail"
-        android:onClick="sendEmail"/>
+        android:onClick="sendEmail" />
 </RelativeLayout>

@@ -35,7 +35,7 @@
         <activity android:name=".activity.TelaFilePicker"/>
         <activity android:name=".activity.TelaResultado"  android:label="Tela Resultado" />
         <activity android:name=".activity.TelaHistoricoCal"  android:label="Tela Histórico Cal" />
-        <activity android:name=".activity.CalibrateActivity"  android:label="Calibrate" />
+        <activity android:name=".activity.CalibrateActivity"  android:label="Calibrate"  />
         <activity android:name=".activity.TelaHistorico"  android:label="Tela Historico"/>
         <activity android:name=".activity.TelaConfiguracao"  android:label="Tela Configuracao" />
         <activity android:name=".activity.TelaFullAutomatic"  android:label="Tela Full Automatic"/>

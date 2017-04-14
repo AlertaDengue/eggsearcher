@@ -36,13 +36,15 @@ import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfDouble;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,6 +53,7 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
 
+import dinidiniz.eggsearcher.Consts;
 import dinidiniz.eggsearcher.R;
 import dinidiniz.eggsearcher.SQL.DBHelper;
 import dinidiniz.eggsearcher.helper.ImageProcessing;
@@ -116,6 +119,8 @@ public class CalibrateActivity extends Activity {
     private int pointContour = 0;
     private int meanBChannel;
 
+    private Boolean selectedToUpload = true;
+
 
     //Start OpenCV and download if necessary
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
@@ -126,11 +131,6 @@ public class CalibrateActivity extends Activity {
                     Log.i(TAG, "OpenCV loaded successfully");
                     //Load to get canvaswidth and canvasheight
                     loadScreen();
-
-
-                    startDrawView();
-
-                    new thresholdingThread(CalibrateActivity.this).execute();
 
                 }
                 break;
@@ -187,6 +187,10 @@ public class CalibrateActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_calibrate);
 
+        //Check if is to upload a picture or not
+        Bundle getIntentExtras = getIntent().getExtras();
+        selectedToUpload = getIntentExtras.getBoolean(Consts.UPLOADED_PHOTO);
+
         dbHelper = new DBHelper(this);
         percentagePixelsTextView = (TextView) findViewById(R.id.percentagePixelsTextView);
 
@@ -223,7 +227,6 @@ public class CalibrateActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        this.finish();
     }
 
     /***
@@ -358,8 +361,76 @@ public class CalibrateActivity extends Activity {
         return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
     }
 
-    public Bitmap getBitmapFromFilePath(String filePath) {
-        Bitmap bitmap = BitmapFactory.decodeFile(filePath);
+    @Override
+    protected void onActivityResult(final int requestCode, int resultCode, final Intent imageReturnedIntent) {
+        super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
+        Log.i(TAG, "resultado do upload");
+        switch (requestCode) {
+            case Consts.SELECTED_PHOTO:
+                if (resultCode == RESULT_OK) {
+                    Log.i(TAG, "resultado do upload");
+
+                    InputStream is = null;
+                    bitmap = null;
+                    try {
+
+                        is = getContentResolver().openInputStream(imageReturnedIntent.getData());
+
+                        bitmap = BitmapFactory.decodeStream(is);
+                        bitmap = adjustBitmap(bitmap);
+                        bitmap2 = bitmap;
+                        bitmapModificate = bitmap;
+                        bitmapOriginal = bitmap;
+                        if (is != null) {
+                            is.close();
+                        }
+
+                        startDrawView();
+
+                        new thresholdingThread(this).execute();
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    Log.i(TAG, "cancelled");
+                    Intent setIntent = new Intent(this, TelaInicial.class);
+                    setIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    startActivity(setIntent);
+                    this.finish();
+                }
+                break;
+        }
+    }
+
+    public void getBitmap(String filePath) {
+
+        Log.i(TAG, "lets get bitmap: " + selectedToUpload);
+        if (bitmap == null) {
+            if (selectedToUpload) {
+                //Intent photoPickerIntent = new Intent(Intent.ACTION_GET_CONTENT);
+                //photoPickerIntent.setType("image/*");
+                Intent photoPickerIntent = new Intent(
+                        Intent.ACTION_PICK,
+                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                this.startActivityForResult(photoPickerIntent, Consts.SELECTED_PHOTO);
+            } else {
+                bitmap = BitmapFactory.decodeFile(filePath);
+                bitmap = adjustBitmap(bitmap);
+                bitmap2 = bitmap;
+                bitmapModificate = bitmap;
+                bitmapOriginal = bitmap;
+
+                startDrawView();
+                new thresholdingThread(this).execute();
+
+            }
+        }
+
+    }
+
+    public Bitmap adjustBitmap(Bitmap bitmap) {
         int widthResolution = bitmap.getWidth();
         int heightResolution = bitmap.getHeight();
 
@@ -454,6 +525,10 @@ public class CalibrateActivity extends Activity {
         int left = 0;
         int right = 0;
         int bottom = 0;
+        if (contours.size() == 0) {
+            goBacktoInitialScreen();
+        }
+
         if (pointContour < contours.size()) {
             while (Imgproc.contourArea(contours.get(pointContour)) < 5) {
                 pointContour += 1;
@@ -617,18 +692,16 @@ public class CalibrateActivity extends Activity {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
 
         //GET PICTURE WITH FILEPATH AND PUT IT IN BITMAP AND GET THE RIGHT SIZES OF THE CANVAS
-        filePath = sharedPref.getString("imagepath", "/");
-        bitmapModificate = getBitmapFromFilePath(filePath);
-        bitmap = bitmapModificate;
-        bitmapOriginal = bitmapModificate;
-        bitmap2 = bitmapOriginal;
+        filePath = sharedPref.getString(Consts.imagepath, "/");
+
+        getBitmap(filePath);
         imgMatOriginal = new Mat();
 
         //GET HEIGHT OF THE PICTURE THAT WAS TAKEN
-        heightOn = sharedPref.getInt("heightFromLentsNumberPickerSelected", 12);
+        heightOn = sharedPref.getInt(Consts.heightFromLentsNumberPickerSelected, 12);
 
         //GET THRESHOLD LEVEL SELECTED
-        int thresholdSpinnerSelected = sharedPref.getInt("thresholdSpinnerSelected", 0);
+        int thresholdSpinnerSelected = sharedPref.getInt(Consts.thresholdSpinnerSelected, 0);
         String valueString = res.getStringArray(R.array.thresholdSpinnerList)[thresholdSpinnerSelected];
         thresholdOn = Integer.parseInt(valueString);
 
@@ -757,7 +830,7 @@ public class CalibrateActivity extends Activity {
                 @Override
                 public void onClick(View v) {
                     new isEggThread(context, false).execute();
-                    percentagePixelsTextView.setText(String.format("%.2f",(((double) pointContour)/contours.size())* 100)+ "% already counted");
+                    percentagePixelsTextView.setText(String.format("%.2f", (((double) pointContour) / contours.size()) * 100) + "% already counted");
                 }
             });
 
@@ -767,7 +840,7 @@ public class CalibrateActivity extends Activity {
                 public void onClick(View v) {
                     new isEggThread(context, true).execute();
                     goToNext();
-                    percentagePixelsTextView.setText(String.format("%.2f",(((double) pointContour)/contours.size())* 100)+ "% already counted");
+                    percentagePixelsTextView.setText(String.format("%.2f", (((double) pointContour) / contours.size()) * 100) + "% already counted");
                 }
             });
 
@@ -776,7 +849,7 @@ public class CalibrateActivity extends Activity {
                 public void onClick(View v) {
                     pointContour += 1;
                     goToNext();
-                    percentagePixelsTextView.setText(String.format("%.2f",(((double) pointContour)/contours.size())* 100)+ "% already counted");
+                    percentagePixelsTextView.setText(String.format("%.2f", (((double) pointContour) / contours.size()) * 100) + "% already counted");
                 }
             });
             //Change button

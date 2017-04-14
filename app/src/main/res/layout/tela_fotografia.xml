@@ -75,12 +75,15 @@
             android:layout_weight="1"
             android:textColor="#000000"></Spinner>
 
-        <Button
-            android:id="@+id/button_capture"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+        <ToggleButton
+            android:background="@drawable/capture_toggle"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:textOff=""
+            android:textOn=""
+            android:id="@+id/captureToggleButton"
             android:onClick="CaptureImage"
-            android:text="Capture" />
+            android:text="" />
     </LinearLayout>
 
 

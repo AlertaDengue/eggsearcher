@@ -5,6 +5,7 @@
         <!-- Customize your theme here. -->
         <item name="android:editTextStyle">@style/MyEditText</item>
         <item name="colorAccent">@android:color/holo_green_dark</item>
+
     </style>
 
 
@@ -17,5 +18,9 @@
     <!--Colors-->
 
     <color name="TransparentBackground">#8000 </color>
+    <color name="primaryColor">#1e81ba</color>
+    <color name="secondaryColor">#1a416a</color>
+
+
 
 </resources>

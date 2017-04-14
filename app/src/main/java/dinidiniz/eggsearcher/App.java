@@ -33,7 +33,6 @@ public class App extends Application {
 
         File storageDir = new File(Consts.getImagePath());
         File file = new File(storageDir, "example.jpg");
-        Log.i(TAG, file.getAbsolutePath());
         if (!file.exists()) {
             storageDir.mkdirs();
             BitmapDrawable drawable = (BitmapDrawable) ContextCompat.getDrawable(this, R.drawable.example);

@@ -18,6 +18,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CalendarView;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.NumberPicker;
@@ -25,6 +26,7 @@ import android.widget.TextView;
 
 import com.google.android.gms.location.LocationListener;
 
+import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -52,6 +54,7 @@ public class TelaResultado extends Activity {
     EditText codeResult;
     EditText descriptionResult;
     EditText dateEditText;
+    CalendarView resultCalendarView;
 
 
     DBHelper db;
@@ -63,10 +66,15 @@ public class TelaResultado extends Activity {
 
         codeResult = (EditText) findViewById(R.id.codeResult);
         descriptionResult = (EditText) findViewById(R.id.descriptionResult);
-        dateEditText = (EditText) findViewById(R.id.dateEditText);
+        resultCalendarView = (CalendarView) findViewById(R.id.resultCalendarView);
+
+        //Set Calendar
+        Calendar c = Calendar.getInstance();
+        resultCalendarView.setDate(c.getTimeInMillis(), false, true);
+        resultCalendarView.setMaxDate(c.getTimeInMillis());
 
 
-        descriptionResult.setText(areaTotal + " area\n\n");
+        descriptionResult.setText(areaTotal + " area");
 
         TextView textSampleNumber = (TextView) findViewById(R.id.textSampleNumber);
         textSampleNumber.setText("Sample Number " + sampleNumber);
@@ -165,7 +173,7 @@ public class TelaResultado extends Activity {
 
     public void getCoordinates(){
         Coordinates coordinates = new Coordinates(this, codeResult.getText().toString(),
-                totalNumberOfEggsView.getValue(),descriptionResult.getText().toString(), dateEditText.getText().toString(), sampleNumber);
+                totalNumberOfEggsView.getValue(),descriptionResult.getText().toString(),resultCalendarView.getDate(), sampleNumber, areaTotal);
     }
 
     public void saveResult(View view){

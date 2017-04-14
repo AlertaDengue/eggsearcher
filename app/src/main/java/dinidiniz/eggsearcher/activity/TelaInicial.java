@@ -18,6 +18,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -49,6 +50,9 @@ public class TelaInicial extends AppCompatActivity {
         askPermissions();
     }
 
+    /**
+     * Function to ask all permissions needed
+     */
     public void askPermissions(){
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 200);
@@ -59,13 +63,23 @@ public class TelaInicial extends AppCompatActivity {
         if ( ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
             ActivityCompat.requestPermissions( this, new String[] {  Manifest.permission.ACCESS_FINE_LOCATION}, 200 );
         }
+        if ( ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ) {
+            ActivityCompat.requestPermissions( this, new String[] {  Manifest.permission.CAMERA}, 200 );
+        }
+        if ( ContextCompat.checkSelfPermission(this, Manifest.permission.FLASHLIGHT) != PackageManager.PERMISSION_GRANTED ) {
+            ActivityCompat.requestPermissions( this, new String[] {  Manifest.permission.FLASHLIGHT}, 200 );
+        }
     }
 
     public void tirarFoto(View view) {
-
-        intent = new Intent(view.getContext(), TelaFotografia.class);
-        intent.putExtra(TelaFotografia.GO_TO_INTENT, TelaFotografia.GO_TO_COUNT);
-        startActivity(intent);
+        if ( ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(this, Manifest.permission.FLASHLIGHT) == PackageManager.PERMISSION_GRANTED ) {
+            intent = new Intent(view.getContext(), TelaFotografia.class);
+            intent.putExtra(TelaFotografia.GO_TO_INTENT, TelaFotografia.GO_TO_COUNT);
+            startActivity(intent);
+        } else {
+            Toast.makeText(this, getResources().getText(R.string.permissions_photo), Toast.LENGTH_SHORT).show();
+        }
     }
 
 
@@ -84,74 +98,6 @@ public class TelaInicial extends AppCompatActivity {
         if (resultCode == RESULT_OK) {
         }
         }
-            /*
-                new AsyncTask<Void, Void, Void>() {
-                    private ProgressDialog progressDialog;
-
-                    @Override
-                    protected void onPreExecute(){
-                        super.onPreExecute();
-                        progressDialog = new ProgressDialog(TelaInicial.this);
-                        progressDialog.setMessage("Getting data");
-                        progressDialog.show();
-                    }
-
-
-                    @Override
-                    protected Void doInBackground(Void... params) {
-
-                        InputStream is = null;
-                        Bitmap bitmap = null;
-                        try {
-
-                            is = getContentResolver().openInputStream(imageReturnedIntent.getData());
-
-                            bitmap = BitmapFactory.decodeStream(is);
-                            if (is != null) {
-                                    is.close();
-                            }
-
-
-                            File mypath = getFileStreamPath("tempIMG.png");
-                            mypath.createNewFile();
-
-                            FileOutputStream fos = new FileOutputStream(mypath);
-                            bitmap.compress(Bitmap.CompressFormat.PNG, 100 , fos);
-                            fos.flush();
-                            fos.close();
-                            *
-
-                            saveScreen();
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        return null;
-                    }
-
-                    @Override
-                    protected void onPostExecute(Void aVoid) {
-                        super.onPostExecute(aVoid);
-                        progressDialog.dismiss();
-                        switch (requestCode) {
-                            case SELECT_GO_TO_COUNT:
-                                intent = new Intent(TelaInicial.this, TelaContagem.class);
-                                intent.putExtra(Consts.UPLOADED_PHOTO, true);
-                                startActivity(intent);
-                                break;
-                            case SELECT_GO_TO_CALIBRATE:
-                                intent = new Intent(TelaInicial.this, CalibrateActivity.class);
-                                intent.putExtra(Consts.UPLOADED_PHOTO, true);
-                                startActivity(intent);
-                                break;
-                        }
-                    }
-
-                }.execute();
-        }
-    }
-                    ***/
 
     public void upload(View view) {
 

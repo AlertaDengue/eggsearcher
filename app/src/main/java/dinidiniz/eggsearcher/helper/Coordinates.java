@@ -10,6 +10,8 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
@@ -17,7 +19,9 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.logging.Handler;
 
 import dinidiniz.eggsearcher.R;
@@ -47,16 +51,18 @@ public class Coordinates implements
     private String code;
     private int eggs;
     private String description;
-    private String date;
+    private long date;
     private int sampleNumber;
+    private int areatotal;
 
-    public Coordinates(Context context, String code, int eggs, String description, String date, int samplenumber) {
+    public Coordinates(Context context, String code, int eggs, String description, long date, int samplenumber, int areatotal) {
         this.context = context;
         this.code = code;
         this.eggs = eggs;
         this.description = description;
         this.date = date;
         this.sampleNumber = samplenumber;
+        this.areatotal = areatotal;
 
         if (mGoogleApiClient == null) {
             mGoogleApiClient = new GoogleApiClient.Builder(context)
@@ -101,7 +107,7 @@ public class Coordinates implements
         Log.i(TAG, "lat: " + lat + " ;lng: " + lng);
 
         DBHelper db = new DBHelper(context);
-        db.insertSample(code,eggs,description, lng, lat, date);
+        db.insertSample(code,eggs,description, lng, lat, date, areatotal);
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
 
         SharedPreferences.Editor editor = sharedPref.edit();
@@ -123,6 +129,38 @@ public class Coordinates implements
     @Override
     public void onLocationChanged(Location location) {
 
+    }
+
+    /***
+     * Return the full address given the lat and lng
+     * @param context
+     * @param lat latitute
+     * @param lng longitude
+     * @return string of the full address
+     */
+    public static String getAdressFromLatLng(Context context, double lat, double lng) {
+        Geocoder geocoder = new Geocoder(context);
+        String address;
+
+        try {
+            List<Address> addresses = geocoder.getFromLocation(lat, lng, 1);
+
+            if (addresses != null && addresses.size() > 0) {
+                Address returnedAddress = addresses.get(0);
+                StringBuilder strReturnedAddress = new StringBuilder("Endereço:\n");
+                for (int i = 0; i < returnedAddress.getMaxAddressLineIndex(); i++) {
+                    strReturnedAddress.append(returnedAddress.getAddressLine(i)).append("\n");
+                }
+                address = strReturnedAddress.toString();
+            } else {
+                address = "latitude: " + lat + " ;longitude: " + lng;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            address = "latitude: " + lat + " ;longitude: " + lng;
+        }
+
+        return address;
     }
 
 }

@@ -12,10 +12,12 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+
 
             <TextView
                 android:id="@+id/textSampleNumber"
@@ -49,20 +51,25 @@
                     android:textSize="21dp" />
 
                 <EditText
-                    android:maxLength="14"
                     android:id="@+id/codeResult"
                     android:layout_width="fill_parent"
-                    android:hint="write a code here"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/edittextborder"
+                    android:background="@drawable/rectangule_background"
+                    android:hint="write a code here"
+                    android:maxLength="14"
                     android:text=""
                     android:textSize="21dp" />
 
             </LinearLayout>
 
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="24dp">
+
 
                 <TextView
-                    android:padding="24dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Description:"
@@ -70,14 +77,17 @@
                     android:textSize="21dp" />
 
                 <EditText
-                    android:padding="24dp"
-                    android:hint="write a description here"
                     android:id="@+id/descriptionResult"
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/edittextborder"
+                    android:background="@drawable/rectangule_background"
+                    android:hint="write a description here"
+                    android:maxLength="500"
+                    android:padding="24dp"
                     android:text=""
+                    android:textColor="#000"
                     android:textSize="21dp" />
+            </LinearLayout>
 
 
             <LinearLayout
@@ -98,10 +108,10 @@
 
                 <NumberPicker
                     android:id="@+id/totalNumberOfEggs"
-                    android:background="@drawable/edittextborder"
-                    android:descendantFocusability="blocksDescendants"
                     android:layout_width="100dp"
-                    android:layout_height="90dp"></NumberPicker>
+                    android:layout_height="90dp"
+                    android:background="@drawable/edittextborder"
+                    android:descendantFocusability="blocksDescendants"></NumberPicker>
 
             </LinearLayout>
 
@@ -110,25 +120,28 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:gravity="center"
-                android:orientation="horizontal"
+                android:orientation="vertical"
                 android:padding="24dp">
 
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="left"
                     android:text="Date:"
                     android:textColor="#000000"
                     android:textSize="21dp" />
 
-
-                <EditText
+                <CalendarView
+                    android:id="@+id/resultCalendarView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:inputType="date"
-                    android:ems="10"
-                    android:id="@+id/dateEditText"
-                    android:layout_weight="1" />
+                    android:layout_gravity="center"
+                    android:background="@color/primaryColor"
+                    android:dateTextAppearance="@android:style/TextAppearance.Medium"
+                    android:weekDayTextAppearance="@android:style/TextAppearance.Medium"
+                    android:weekSeparatorLineColor="@color/secondaryColor" />
+
 
             </LinearLayout>
 
@@ -140,8 +153,8 @@
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="50dp"
-        android:gravity="center"
         android:background="#000000"
+        android:gravity="center"
         android:orientation="horizontal"
         android:padding="2dp">
 
@@ -159,9 +172,6 @@
             android:onClick="saveResult"
             android:text="Save Result" />
     </LinearLayout>
-
-
-
 
 
 </LinearLayout>

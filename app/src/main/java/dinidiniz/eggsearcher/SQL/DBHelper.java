@@ -38,6 +38,10 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String SAMPLES_COLUMN_LNG = "longitude";
     public static final String SAMPLES_COLUMN_DESCRIPTION = "description";
     public static final String SAMPLES_COLUMN_TOTALAREA = "totalarea";
+    public static final String SAMPLES_COLUMN_HEIGHT = "height";
+    public static final String SAMPLES_COLUMN_RESOLUTIONWIDTH = "resolutionwidth";
+    public static final String SAMPLES_COLUMN_RESOLUTIONHEIGHT = "resolutionheight";
+
     public static final String CONTOURS_TABLE_NAME = "contours";
     public static final String CONTOURS_COLUMN_ID = "id";
     public static final String CONTOURS_COLUMN_CONVEX = "convex";
@@ -45,6 +49,7 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String CONTOURS_COLUMN_AREA = "area";
     public static final String CONTOURS_COLUMN_APROXPOLY = "aproxpoly";
     public static final String CONTOURS_COLUMN_ISEGG = "isegg";
+
     public static final String PIXEL_TABLE_NAME = "pixel";
     public static final String PIXEL_COLUMN_ID = "id";
     public static final String PIXEL_COLUMN_R = "r";
@@ -71,7 +76,11 @@ public class DBHelper extends SQLiteOpenHelper {
         db.execSQL(
                 "create table if not exists " + SAMPLES_TABLE_NAME + "(" + SAMPLES_COLUMN_ID
                         + " integer primary key autoincrement, " + SAMPLES_COLUMN_CODE + " text, "
-                        + SAMPLES_COLUMN_EGGS + " integer not null, " + SAMPLES_COLUMN_DESCRIPTION
+                        + SAMPLES_COLUMN_EGGS + " integer not null, "
+                        + SAMPLES_COLUMN_RESOLUTIONWIDTH + " integer not null, "
+                        + SAMPLES_COLUMN_RESOLUTIONHEIGHT + " integer not null, "
+                        + SAMPLES_COLUMN_HEIGHT + " integer not null, "
+                        + SAMPLES_COLUMN_DESCRIPTION
                         + " text, " + SAMPLES_COLUMN_DATEONFIELD + " datetime, " + SAMPLES_COLUMN_LAT
                         + " decimal(9,6), " + SAMPLES_COLUMN_LNG + " decimal(9,6), " + SAMPLES_COLUMN_TOTALAREA
                         + " integer not null, " + SAMPLES_COLUMN_CREATEDAT
@@ -105,7 +114,9 @@ public class DBHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    public boolean insertSample(String code, int eggs, String description, double lng, double lat, long dateOnField, int totalarea) {
+    public boolean insertSample(String code, int eggs, String description, double lng, double lat,
+                                long dateOnField, int totalarea, int resolutionHeight,
+                                int resolutionWidth, int height) {
 
         try {
             SQLiteDatabase db = this.getWritableDatabase();
@@ -117,12 +128,16 @@ public class DBHelper extends SQLiteOpenHelper {
             contentValues.put(SAMPLES_COLUMN_LNG, lng);
             contentValues.put(SAMPLES_COLUMN_DATEONFIELD, dateOnField);
             contentValues.put(SAMPLES_COLUMN_TOTALAREA, totalarea);
+            contentValues.put(SAMPLES_COLUMN_HEIGHT, height);
+            contentValues.put(SAMPLES_COLUMN_RESOLUTIONHEIGHT, resolutionHeight);
+            contentValues.put(SAMPLES_COLUMN_RESOLUTIONWIDTH, resolutionWidth);
             db.insertOrThrow("SAMPLES", null, contentValues);
             db.close();
         } catch (SQLiteException e){
             Log.i(TAG, "Error in SQLite");
             this.onUpgrade(this.getReadableDatabase(), 1,1);
-            this.insertSample(code, eggs, description, lng, lat, dateOnField, totalarea);
+            this.insertSample(code, eggs, description, lng, lat, dateOnField, totalarea,
+                    resolutionHeight, resolutionWidth, height);
         }
         return true;
     }
@@ -213,7 +228,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 arrayList.add(res.getString(res.getColumnIndex(SAMPLES_COLUMN_DESCRIPTION)));
                 double lat = res.getDouble(res.getColumnIndex(SAMPLES_COLUMN_LAT));
                 double lng = res.getDouble(res.getColumnIndex(SAMPLES_COLUMN_LNG));
-                arrayList.add(Coordinates.getAdressFromLatLng(context, lat, lng));
+                arrayList.add("latitude: " + lat + " ;longitude: " + lng);
                 String dateString = new SimpleDateFormat("MM/dd/yyyy").format(res.getLong(res.getColumnIndex(SAMPLES_COLUMN_DATEONFIELD)));
                 arrayList.add(dateString);
 

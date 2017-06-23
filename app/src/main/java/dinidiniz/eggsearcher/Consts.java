@@ -13,6 +13,10 @@ public class Consts {
     public final static String imagepath = "imagepath";
     public final static String heightFromLentsNumberPickerSelected = "heightFromLentsNumberPickerSelected";
     public final static String thresholdSpinnerSelected = "thresholdSpinnerSelected";
+    public final static int ORIGINAL_heightFromLentsNumberPickerSelected = 12;
+    public final static String numberOfEggs = "numberOfEggs";
+    public final static String areaTotal = "areaTotal";
+    public final static String namePhotoSpinnerSelected = "namePhotoSpinnerSelected";
 
     public static String getImagePath(){
         return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/eggSearcher/";

@@ -39,6 +39,7 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.FileNotFoundException;
@@ -94,7 +95,7 @@ public class TelaContagem extends AppCompatActivity {
     int numberOfEggs = 0;
     int areaTotal = 0;
 
-    double[] weights = {1, 1, 1, 1, 1};
+    double[] weights = {1, 1, 1, 1};
     private Boolean seletecToUpload = true;
     //Thouch Events variables
     private float mX, mY;
@@ -297,9 +298,9 @@ public class TelaContagem extends AppCompatActivity {
     public void saveScreen() {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putInt("numberOfEggs", numberOfEggs);
-        editor.putInt("areaTotal", areaTotal);
-        editor.commit();
+        editor.putInt(Consts.numberOfEggs, numberOfEggs);
+        editor.putInt(Consts.areaTotal, areaTotal);
+        editor.apply();
     }
 
     public void startDrawView() {
@@ -530,13 +531,12 @@ public class TelaContagem extends AppCompatActivity {
         weights[1] = Double.longBitsToDouble(sharedPref.getLong(TelaConfiguracao.WEIGHT_LOGISTIC_G, 1));
         weights[2] = Double.longBitsToDouble(sharedPref.getLong(TelaConfiguracao.WEIGHT_LOGISTIC_B, 1));
         weights[3] = Double.longBitsToDouble(sharedPref.getLong(TelaConfiguracao.WEIGHT_LOGISTIC_GRAY, 1));
-        weights[4] = Double.longBitsToDouble(sharedPref.getLong(TelaConfiguracao.WEIGHT_LOGISTIC_MEANB, 1));
 
         //GET PICTURE WITH FILEPATH AND PUT IT IN BITMAP AND GET THE RIGHT SIZES OF THE CANVAS
         filePath = sharedPref.getString(Consts.imagepath, "/");
 
         //GET HEIGHT OF THE PICTURE THAT WAS TAKEN
-        heightOn = sharedPref.getInt(Consts.heightFromLentsNumberPickerSelected, 12);
+        heightOn = sharedPref.getInt(Consts.heightFromLentsNumberPickerSelected, Consts.ORIGINAL_heightFromLentsNumberPickerSelected);
 
         //GET THRESHOLD LEVEL SELECTED
         int thresholdSpinnerSelected = sharedPref.getInt(Consts.thresholdSpinnerSelected, 0);
@@ -807,10 +807,6 @@ public class TelaContagem extends AppCompatActivity {
             mG = mRgb.get(1);
             mB = mRgb.get(2);
 
-            Mat ones = org.opencv.core.Mat.ones(mR.rows(), mR.cols(), CvType.CV_64FC1);
-            Scalar alpha = new Scalar(meanBChannel, CvType.CV_64FC1);
-            Core.multiply(ones, alpha, ones);
-
 
             publishProgress("Analysing each pixel");
             /*
@@ -850,7 +846,8 @@ public class TelaContagem extends AppCompatActivity {
             */
 
 
-            Mat[] matArrays = {mR, mG, mB, mGrayscale, ones};
+            Mat[] matArrays = {mR, mG, mB, mGrayscale};
+            Scalar alpha;
 
             for (int i = 0; i < matArrays.length; i++) {
                 matArrays[i].convertTo(matArrays[i], CvType.CV_64FC1);
@@ -861,19 +858,23 @@ public class TelaContagem extends AppCompatActivity {
             Core.add(matArrays[0], matArrays[1], matArrays[1]);
             Core.add(matArrays[1], matArrays[2], matArrays[2]);
             Core.add(matArrays[2], matArrays[3], matArrays[3]);
-            Core.add(matArrays[3], matArrays[4], matArrays[4]);
 
             Mat zeros = org.opencv.core.Mat.zeros(mR.rows(), mR.cols(), CvType.CV_64FC1);
 
-            Core.compare(matArrays[4], zeros, matArrays[4], Core.CMP_GT);
+            Core.compare(matArrays[3], zeros, matArrays[3], Core.CMP_GT);
 
 
             Mat finalMat = new Mat();
 
-            matArrays[4].copyTo(finalMat, threshold);
+            matArrays[3].copyTo(finalMat, threshold);
 
-            //Imgproc.dilate(finalMat, finalMat, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3)));
-            //Imgproc.erode(finalMat, finalMat, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3)));
+            /***
+             * Dilate e erode process
+
+
+            Imgproc.dilate(finalMat, finalMat, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3)));
+            Imgproc.erode(finalMat, finalMat, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3)));
+             */
 
             finalMat.convertTo(finalMat, imgMat.type());
 

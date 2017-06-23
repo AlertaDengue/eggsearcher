@@ -19,6 +19,7 @@ import android.widget.TextView;
 import java.util.HashMap;
 import java.util.List;
 
+import dinidiniz.eggsearcher.Consts;
 import dinidiniz.eggsearcher.R;
 import dinidiniz.eggsearcher.SQL.DBHelper;
 import dinidiniz.eggsearcher.functions.CameraPreview;
@@ -164,14 +165,13 @@ public class TelaConfiguracao extends Activity {
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putInt("thresholdSpinnerSelected", thresholdSpinner.getSelectedItemPosition());
         editor.putInt("processSpinnerSelected", processSpinner.getSelectedItemPosition());
-        editor.putInt("heightFromLentsNumberPickerSelected", heightFromLentsNumberPicker.getValue());
+        editor.putInt(Consts.heightFromLentsNumberPickerSelected, heightFromLentsNumberPicker.getValue());
         editor.putInt("resolutionSpinnerSelected", resolutionSpinner.getSelectedItemPosition());
         editor.putInt("photoAreaSpinnerSelected", photoAreaSpinner.getSelectedItemPosition());
         editor.putLong(WEIGHT_LOGISTIC_R, Double.doubleToRawLongBits(weights[0]));
         editor.putLong(WEIGHT_LOGISTIC_G, Double.doubleToRawLongBits(weights[1]));
         editor.putLong(WEIGHT_LOGISTIC_B, Double.doubleToRawLongBits(weights[2]));
         editor.putLong(WEIGHT_LOGISTIC_GRAY, Double.doubleToRawLongBits(weights[3]));
-        editor.putLong(WEIGHT_LOGISTIC_MEANB, Double.doubleToRawLongBits(weights[4]));
         editor.putLong("error", error);
         editor.commit();
     }
@@ -182,12 +182,11 @@ public class TelaConfiguracao extends Activity {
         processSpinnerSelected = sharedPref.getInt("processSpinnerSelected", 0);
         resolutionSpinnerSelected = sharedPref.getInt("resolutionSpinnerSelected", 0);
         photoAreaSpinnerSelected = sharedPref.getInt("photoAreaSpinnerSelected", 0);
-        heightFromLentsNumberPickerSelected = sharedPref.getInt("heightFromLentsNumberPickerSelected", 12);
+        heightFromLentsNumberPickerSelected = sharedPref.getInt(Consts.heightFromLentsNumberPickerSelected, Consts.ORIGINAL_heightFromLentsNumberPickerSelected);
         weights[0] = Double.longBitsToDouble(sharedPref.getLong(WEIGHT_LOGISTIC_R, 1));
         weights[1] = Double.longBitsToDouble(sharedPref.getLong(WEIGHT_LOGISTIC_G, 1));
         weights[2] = Double.longBitsToDouble(sharedPref.getLong(WEIGHT_LOGISTIC_B, 1));
         weights[3] = Double.longBitsToDouble(sharedPref.getLong(WEIGHT_LOGISTIC_GRAY, 1));
-        weights[4] = Double.longBitsToDouble(sharedPref.getLong(WEIGHT_LOGISTIC_MEANB, 1));
         error = sharedPref.getLong("error", 0);
     }
 

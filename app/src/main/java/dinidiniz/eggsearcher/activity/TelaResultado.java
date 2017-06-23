@@ -23,6 +23,7 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.NumberPicker;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.location.LocationListener;
 
@@ -30,6 +31,7 @@ import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Set;
 
+import dinidiniz.eggsearcher.Consts;
 import dinidiniz.eggsearcher.R;
 import dinidiniz.eggsearcher.SQL.DBHelper;
 import dinidiniz.eggsearcher.helper.Coordinates;
@@ -39,25 +41,30 @@ import dinidiniz.eggsearcher.helper.Coordinates;
  */
 public class TelaResultado extends Activity {
 
-    int numberOfEggs;
-    int totalNumberOfEggs;
-    int sampleNumber;
-    int areaTotal;
-    String TAG = "TelaResultado";
-    Intent intent;
-    int number = 1;
-    Set<String> numberOfEggsSamples = new HashSet<String>(1);
+    private int numberOfEggs;
+    private int totalNumberOfEggs;
+    private int sampleNumber;
+    private int areaTotal;
+    private long dateOnField;
+    private int resolutionHeight = 0;
+    private int resolutionWidth = 0;
+    private int height = 0;
+    private final String TAG = TelaResultado.class.getName();
+    private Intent intent;
+    private int number = 1;
+    private Set<String> numberOfEggsSamples = new HashSet<String>(1);
+    private String filePath;
 
 
-    LinearLayout linearLayoutSamples;
-    NumberPicker totalNumberOfEggsView;
-    EditText codeResult;
-    EditText descriptionResult;
-    EditText dateEditText;
-    CalendarView resultCalendarView;
+    private LinearLayout linearLayoutSamples;
+    private NumberPicker totalNumberOfEggsView;
+    private EditText codeResult;
+    private EditText descriptionResult;
+    private EditText dateEditText;
+    private CalendarView resultCalendarView;
 
 
-    DBHelper db;
+
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -72,6 +79,16 @@ public class TelaResultado extends Activity {
         Calendar c = Calendar.getInstance();
         resultCalendarView.setDate(c.getTimeInMillis(), false, true);
         resultCalendarView.setMaxDate(c.getTimeInMillis());
+        resultCalendarView.setOnDateChangeListener(new CalendarView.OnDateChangeListener() {
+
+            @Override
+            public void onSelectedDayChange(CalendarView arg0, int year, int month,
+                                            int date) {
+                Calendar cal1 = Calendar.getInstance();
+                cal1.set(year, month, date);
+                dateOnField = cal1.getTimeInMillis();
+            }
+        });
 
 
         descriptionResult.setText(areaTotal + " area");
@@ -133,7 +150,7 @@ public class TelaResultado extends Activity {
         }
 
         totalNumberOfEggsView = (NumberPicker) findViewById(R.id.totalNumberOfEggs);
-        totalNumberOfEggsView.setMaxValue(1000000000);
+        totalNumberOfEggsView.setMaxValue(1000000);
         totalNumberOfEggsView.setMinValue(0);
         totalNumberOfEggsView.setValue(totalNumberOfEggs);
 
@@ -146,7 +163,23 @@ public class TelaResultado extends Activity {
         sampleNumber = sharedPref.getInt("sampleNumber", 1);
         areaTotal = sharedPref.getInt("areaTotal", 0);
         numberOfEggsSamples = sharedPref.getStringSet("numberOfEggsSamples", numberOfEggsSamples);
+        filePath = sharedPref.getString(Consts.imagepath, "/");
+        getHeightAndMP(filePath);
         numberOfEggsSamples.add("" + numberOfEggs);
+    }
+
+    private void getHeightAndMP(String filePath){
+        String fileName = filePath.split("/")[filePath.split("/").length -1];
+        String[] fileInfos = fileName.split("_");
+        Log.i(TAG, fileName + " lenght: " + fileInfos.length );
+        if (fileInfos.length  == 6) {
+            Log.i(TAG, "parse: "  + Integer.parseInt(fileInfos[2]));
+            height = Integer.parseInt(fileInfos[3]);
+            resolutionHeight = Integer.parseInt(fileInfos[1]);
+            resolutionWidth = Integer.parseInt(fileInfos[2]);
+        }
+
+
     }
 
     public void saveScreenAnotherPicture(){
@@ -171,9 +204,12 @@ public class TelaResultado extends Activity {
         startActivity(intent);
     }
 
+    /***
+     * Send to get coordinates and save in the db
+     */
     public void getCoordinates(){
-        Coordinates coordinates = new Coordinates(this, codeResult.getText().toString(),
-                totalNumberOfEggsView.getValue(),descriptionResult.getText().toString(),resultCalendarView.getDate(), sampleNumber, areaTotal);
+        new Coordinates(this, codeResult.getText().toString(),
+                totalNumberOfEggsView.getValue(),descriptionResult.getText().toString(),dateOnField , sampleNumber, areaTotal, height, resolutionHeight, resolutionWidth);
     }
 
     public void saveResult(View view){

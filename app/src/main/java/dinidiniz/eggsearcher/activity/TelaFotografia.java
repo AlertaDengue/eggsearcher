@@ -15,7 +15,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
@@ -34,8 +33,8 @@ import java.util.Date;
 import java.util.List;
 
 import dinidiniz.eggsearcher.Consts;
-import dinidiniz.eggsearcher.functions.CameraPreview;
 import dinidiniz.eggsearcher.R;
+import dinidiniz.eggsearcher.functions.CameraPreview;
 import dinidiniz.eggsearcher.helper.Gallery;
 
 
@@ -44,19 +43,19 @@ public class TelaFotografia extends AppCompatActivity {
     public static final String GO_TO_INTENT = "goto";
     public static final Integer GO_TO_COUNT = 0;
     public static final Integer GO_TO_CALIBRATE = 1;
-
-    private Integer GO_TO;
-    private Camera mCamera;
-    private CameraPreview mPreview;
-    private boolean alreadyAccessed = false;
     String TAG = TelaFotografia.class.getName();
     Intent intent;
     FrameLayout preview;
     String filename;
+    private Integer GO_TO;
+    private Camera mCamera;
+    private CameraPreview mPreview;
+    private boolean alreadyAccessed = false;
     private int processSpinnerSelected;
     private int resolutionSpinnerSelected;
     private int namePhotoSpinnerSelected;
     private int photoAreaSpinnerSelected;
+    private int heightFromLentsNumberPickerSelected;
     private float photoAreaWeight;
     private Spinner namePhotoSpinner;
     private String[] namePhotoSpinnerList;
@@ -64,6 +63,38 @@ public class TelaFotografia extends AppCompatActivity {
     private ToggleButton captureToggleButton;
 
     private Camera.Size resolutionChoosen;
+    private Camera.PictureCallback mPicture = new Camera.PictureCallback() {
+
+        @Override
+        public void onPictureTaken(byte[] data, Camera camera) {
+
+            //Entra aqui se não há problemas em tirar a foto;
+            Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
+
+            int photoAreaIndex = (int) Math.ceil(photoAreaWeight * 2 + 1);
+
+            Log.i(TAG, "photoAreaIndex: " + photoAreaIndex + "; photoAreaWeight: " + photoAreaWeight);
+            Bitmap croppedBitmap = Bitmap.createBitmap(bmp, (int) Math.ceil(resolutionChoosen.width * photoAreaWeight / photoAreaIndex),
+                    (int) Math.ceil(resolutionChoosen.height * photoAreaWeight / photoAreaIndex), (int) Math.ceil(resolutionChoosen.width / photoAreaIndex),
+                    (int) Math.ceil(resolutionChoosen.height / photoAreaIndex));
+
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            croppedBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+
+            data = stream.toByteArray();
+
+            try {
+                OutputStream out = new BufferedOutputStream(new FileOutputStream(filename));
+                out.write(data);
+                out.close();
+                Gallery.galleryAddPic(getApplicationContext(), filename);
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+            }
+
+            goToNextScreen();
+        }
+    };
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -86,7 +117,7 @@ public class TelaFotografia extends AppCompatActivity {
         LinearLayout photoArea3LinearLayout = (LinearLayout) findViewById(R.id.photoArea3LinearLayout);
         LinearLayout photoArea4LinearLayout = (LinearLayout) findViewById(R.id.photoArea4LinearLayout);
 
-        LinearLayout[] photoAreaLinearLayoutList = {photoArea1LinearLayout, photoArea2LinearLayout, photoArea3LinearLayout,photoArea4LinearLayout};
+        LinearLayout[] photoAreaLinearLayoutList = {photoArea1LinearLayout, photoArea2LinearLayout, photoArea3LinearLayout, photoArea4LinearLayout};
 
 
         for (LinearLayout photoAreaLinearLayout : photoAreaLinearLayoutList) {
@@ -129,7 +160,7 @@ public class TelaFotografia extends AppCompatActivity {
 
     }
 
-    public void getResultParameters(){
+    public void getResultParameters() {
         try {
             File storageDir = new File(Consts.getImagePath());
             if (!storageDir.exists()) {
@@ -141,22 +172,24 @@ public class TelaFotografia extends AppCompatActivity {
             } else {
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
                 String currentDateandTime = sdf.format(new Date());
-                filename = Consts.getImagePath() + namePhotoSpinner.getSelectedItem() + "_" + currentDateandTime + ".png";
+                filename = Consts.getImagePath() + namePhotoSpinner.getSelectedItem() + "_" +
+                        resolutionChoosen.height + "_" +  resolutionChoosen.width  +
+                        "_" + heightFromLentsNumberPickerSelected + "_" + currentDateandTime + ".png";
             }
         } catch (Exception e) {
             Log.i(TAG, "cant get address");
-            Toast.makeText(this,"Capture your first image! :)", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Capture your first image! :)", Toast.LENGTH_SHORT).show();
             filename = this.getFilesDir() + File.separator + "tempIMG.png";
         }
 
         Log.i(TAG, "address of file:" + filename);
     }
 
-    public void startCamera(){
+    public void startCamera() {
         getResultParameters();
         getCameraInstance();
         if (mCamera == null) {
-            Toast.makeText(this,"Camera not available", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Camera not available", Toast.LENGTH_SHORT).show();
             onBackPressed();
         } else {
             // Create our Preview view and set it as the content of our activity.
@@ -172,7 +205,7 @@ public class TelaFotografia extends AppCompatActivity {
                     if (mCamera != null) {
                         //Camera camera = Camera.getCamera();
                         mCamera.cancelAutoFocus();
-                        Rect focusRect = new Rect(-500,-500,500,500);
+                        Rect focusRect = new Rect(-500, -500, 500, 500);
 
                         Camera.Parameters parameters = mCamera.getParameters();
                         if (parameters.getFocusMode() != Camera.Parameters.FOCUS_MODE_AUTO) {
@@ -216,7 +249,7 @@ public class TelaFotografia extends AppCompatActivity {
                                         parameters.set("metering", "matrix");
                                         parameters.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_INCANDESCENT);
                                         parameters.setJpegQuality(100);
-                                        if(namePhotoSpinner.getSelectedItemPosition() == 1) {
+                                        if (namePhotoSpinner.getSelectedItemPosition() == 1) {
                                             parameters.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
                                         } else {
                                             parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
@@ -237,14 +270,35 @@ public class TelaFotografia extends AppCompatActivity {
     }
 
 
-
     /********************************************************/
-    /** A safe way to get an instance of the Camera object. */
-    public void getCameraInstance(){
+
+    private int findBackFacingCamera() {
+
+        // Search for the front facing camera
+
+        int cameraId = 0;
+        boolean cameraFront;
+        int numberOfCameras = Camera.getNumberOfCameras();
+        for (int i = 0; i < numberOfCameras; i++) {
+            Camera.CameraInfo info = new Camera.CameraInfo();
+            Camera.getCameraInfo(i, info);
+            if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+                cameraId = i;
+                cameraFront = true;
+                break;
+            }
+        }
+        return cameraId;
+    }
+
+    /**
+     * A safe way to get an instance of the Camera object.
+     */
+    public void getCameraInstance() {
         mCamera = null;
         try {
             //PUT ALL PARAMETERS HERE
-            mCamera = Camera.open(); // attempt to get a Camera instance
+            mCamera = Camera.open(findBackFacingCamera()); // attempt to get a Camera instance
             mCamera.cancelAutoFocus();
             Camera.Parameters params = mCamera.getParameters();
 
@@ -272,51 +326,19 @@ public class TelaFotografia extends AppCompatActivity {
             params.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_INCANDESCENT);
             //params.setSceneMode(Camera.Parameters.SCENE_MODE_SNOW);
             params.setJpegQuality(100);
-            if(namePhotoSpinner.getSelectedItemPosition() == 1) {
+            if (namePhotoSpinner.getSelectedItemPosition() == 1) {
                 params.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
             } else {
                 params.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
             }
 
 
-
             mCamera.setParameters(params);
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             // Camera is not available (in use or does not exist)
             Log.i("GetCameraInstance", "Not Availible");
         }
     }
-
-    private Camera.PictureCallback mPicture = new Camera.PictureCallback() {
-
-        @Override
-        public void onPictureTaken(byte[] data, Camera camera) {
-
-            //Entra aqui se não há problemas em tirar a foto;
-            Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
-
-            Bitmap croppedBitmap = Bitmap.createBitmap(bmp, resolutionChoosen.width / 3, (int) Math.ceil(resolutionChoosen.height * 1.5 / 4), resolutionChoosen.width/3,
-                    (int) Math.ceil(resolutionChoosen.height/ 4));
-
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            croppedBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
-
-            data = stream.toByteArray();
-
-            try {
-                OutputStream out = new BufferedOutputStream(new FileOutputStream(filename));
-                out.write(data);
-                out.close();
-                Gallery.galleryAddPic(getApplicationContext(), filename);
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
-            }
-
-            goToNextScreen();
-        }
-    };
-
 
     public void CaptureImage(View view) {
 
@@ -330,10 +352,10 @@ public class TelaFotografia extends AppCompatActivity {
 
     }
 
-    public void goToNextScreen(){
+    public void goToNextScreen() {
         saveScreen();
         releaseCamera();
-        if (GO_TO.equals(GO_TO_CALIBRATE)){
+        if (GO_TO.equals(GO_TO_CALIBRATE)) {
             intent = new Intent(this, CalibrateActivity.class);
             intent.putExtra(Consts.UPLOADED_PHOTO, false);
             startActivity(intent);
@@ -357,18 +379,15 @@ public class TelaFotografia extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        if (mCamera != null) {
-            releaseCamera();              // release the camera immediately on pause event
-        }
+        releaseCamera();              // release the camera immediately on pause event
+
     }
 
 
     @Override
-    protected void onStop(){
+    protected void onStop() {
         super.onStop();
-        if (mCamera != null) {
-            releaseCamera();              // release the camera immediately on pause event
-        }
+        releaseCamera();              // release the camera immediately on pause event
     }
 
     @Override
@@ -380,8 +399,8 @@ public class TelaFotografia extends AppCompatActivity {
     }
 
 
-    private void releaseCamera(){
-        if (mCamera != null){
+    private void releaseCamera() {
+        if (mCamera != null) {
             mCamera.setPreviewCallback(null);
             mPreview.getHolder().removeCallback(mPreview);
             mCamera.stopPreview();
@@ -390,24 +409,25 @@ public class TelaFotografia extends AppCompatActivity {
         }
     }
 
-    public void saveScreen(){
+    public void saveScreen() {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putInt("namePhotoSpinnerSelected", namePhotoSpinner.getSelectedItemPosition());
-        editor.putString("imagepath", filename);
-        editor.commit();
+        editor.putInt(Consts.namePhotoSpinnerSelected, namePhotoSpinner.getSelectedItemPosition());
+        editor.putString(Consts.imagepath, filename);
+        editor.apply();
     }
 
-    public void loadScreen(){
+    public void loadScreen() {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-        namePhotoSpinnerSelected = sharedPref.getInt("namePhotoSpinnerSelected", 0);
+        namePhotoSpinnerSelected = sharedPref.getInt(Consts.namePhotoSpinnerSelected, 0);
         processSpinnerSelected = sharedPref.getInt("processSpinnerSelected", 0);
         resolutionSpinnerSelected = sharedPref.getInt("resolutionSpinnerSelected", 0);
+        heightFromLentsNumberPickerSelected = sharedPref.getInt(Consts.heightFromLentsNumberPickerSelected, Consts.ORIGINAL_heightFromLentsNumberPickerSelected);
 
         photoAreaSpinnerSelected = sharedPref.getInt("photoAreaSpinnerSelected", 0);
         String[] photoAreaSpinnerList = res.getStringArray(R.array.photoAreaSpinnerList);
         String areaPhoto = photoAreaSpinnerList[photoAreaSpinnerSelected];
-        photoAreaWeight = (float) (Math.sqrt(Integer.parseInt(areaPhoto.substring(areaPhoto.lastIndexOf(':') + 1))) -1 )/2;
+        photoAreaWeight = (float) (Math.sqrt(Integer.parseInt(areaPhoto.substring(areaPhoto.lastIndexOf(':') + 1))) - 1) / 2;
     }
 
 

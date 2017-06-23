@@ -182,8 +182,7 @@ public class Logistic {
 
         for (List<Integer> pixel:listOfPixels){
             FeatureNode[] data = {new FeatureNode(1, pixel.get(0)), new FeatureNode(2, pixel.get(1)),
-                    new FeatureNode(3, pixel.get(2)), new FeatureNode(4, pixel.get(3)),
-                    new FeatureNode(5, pixel.get(4))};
+                    new FeatureNode(3, pixel.get(2)), new FeatureNode(4, pixel.get(3))};
             dataset.add(data);
         };
 

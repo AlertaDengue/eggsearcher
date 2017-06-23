@@ -54,8 +54,12 @@ public class Coordinates implements
     private long date;
     private int sampleNumber;
     private int areatotal;
+    private int height;
+    private int resolutionHeight;
+    private int resolutionWidth;
 
-    public Coordinates(Context context, String code, int eggs, String description, long date, int samplenumber, int areatotal) {
+    public Coordinates(Context context, String code, int eggs, String description, long date,
+                       int samplenumber, int areatotal, int height, int resolutionHeight, int resolutionWidth) {
         this.context = context;
         this.code = code;
         this.eggs = eggs;
@@ -63,6 +67,9 @@ public class Coordinates implements
         this.date = date;
         this.sampleNumber = samplenumber;
         this.areatotal = areatotal;
+        this.height = height;
+        this.resolutionHeight = resolutionHeight;
+        this.resolutionWidth = resolutionWidth;
 
         if (mGoogleApiClient == null) {
             mGoogleApiClient = new GoogleApiClient.Builder(context)
@@ -107,7 +114,7 @@ public class Coordinates implements
         Log.i(TAG, "lat: " + lat + " ;lng: " + lng);
 
         DBHelper db = new DBHelper(context);
-        db.insertSample(code,eggs,description, lng, lat, date, areatotal);
+        db.insertSample(code,eggs,description, lng, lat, date, areatotal, height, resolutionHeight, resolutionWidth);
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
 
         SharedPreferences.Editor editor = sharedPref.edit();

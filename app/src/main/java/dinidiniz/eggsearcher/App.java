@@ -6,6 +6,9 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.support.v4.content.ContextCompat;
 
+import com.google.android.gms.analytics.GoogleAnalytics;
+import com.google.android.gms.analytics.Tracker;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -18,7 +21,7 @@ import dinidiniz.eggsearcher.helper.Gallery;
  * Created by leon on 07/04/17.
  */
 public class App extends Application {
-
+    private Tracker mTracker;
     private static final String TAG = App.class.getSimpleName();
 
     /***
@@ -55,5 +58,18 @@ public class App extends Application {
         }catch(IOException e){
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Gets the default {@link Tracker} for this {@link Application}.
+     * @return tracker
+     */
+    synchronized public Tracker getDefaultTracker() {
+        if (mTracker == null) {
+            GoogleAnalytics analytics = GoogleAnalytics.getInstance(this);
+            // To enable debug logging use: adb shell setprop log.tag.GAv4 DEBUG
+            mTracker = analytics.newTracker(R.xml.global_tracker);
+        }
+        return mTracker;
     }
 }

@@ -1,24 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="dinidiniz.eggsearcher">
-    <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.FLASHLIGHT"/>
+
+
+    <!--GOOGLE MAPS PERMISSIONS-->
+    <permission
+        android:name="your.package.name.permission.MAPS_RECEIVE"
+        android:protectionLevel="signature" />
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="dinidiniz.eggsearcher.permission.MAPS_RECEIVE" />
+
+    <!--CAMERA PERMISSIONS-->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.FLASHLIGHT" />
+
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
     <uses-feature android:name="android.hardware.camera.flash" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
-        android:icon="@drawable/icon"
-        android:largeHeap="true"
-        android:hardwareAccelerated="false"
         android:name=".App"
+        android:allowBackup="true"
+        android:fullBackupContent="true"
+        android:hardwareAccelerated="false"
+        android:icon="@drawable/icon"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
-        <activity android:name=".activity.TelaInicial">
+        android:largeHeap="true"
+        android:theme="@style/AppTheme">
+
+        <activity
+            android:name=".activity.SignInActivity"
+            android:label="Sing in">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -26,19 +45,64 @@
         </activity>
         <activity
             android:name=".activity.TelaFotografia"
-            android:label="Atividade Principal" >
-        </activity>
+            android:label="Atividade Principal" />
         <activity
             android:name=".activity.TelaContagem"
-            android:label="Tela Contagem" >
-        </activity>
-        <activity android:name=".activity.TelaFilePicker"/>
-        <activity android:name=".activity.TelaResultado"  android:label="Tela Resultado" />
-        <activity android:name=".activity.TelaHistoricoCal"  android:label="Tela Histórico Cal" />
-        <activity android:name=".activity.CalibrateActivity"  android:label="Calibrate"  />
-        <activity android:name=".activity.TelaHistorico"  android:label="Tela Historico"/>
-        <activity android:name=".activity.TelaConfiguracao"  android:label="Tela Configuracao" />
-        <activity android:name=".activity.TelaFullAutomatic"  android:label="Tela Full Automatic"/>
+            android:label="Tela Contagem" />
+        <activity android:name=".activity.TelaFilePicker" />
+        <activity
+            android:name=".activity.TelaResultado"
+            android:hardwareAccelerated="true"
+            android:label="Tela Resultado" />
+        <activity
+            android:name=".activity.TelaHistoricoCal"
+            android:label="Tela Histórico Cal" />
+        <activity
+            android:name=".activity.CalibrateActivity"
+            android:label="Calibrate" />
+        <activity
+            android:name=".activity.TelaHistorico"
+            android:label="Tela Historico" />
+        <activity
+            android:name=".activity.TelaConfiguracao"
+            android:label="Tela Configuracao" />
+        <activity
+            android:name=".activity.TelaFullAutomatic"
+            android:label="Tela Full Automatic" />
+        <activity
+            android:name=".activity.TelaInicial"
+            android:label="Tela Inicial" />
+
+        <meta-data
+            android:name="com.google.android.maps.v2.API_KEY"
+            android:value="AIzaSyA2ST-ytq6SG3FTlFI9BFBOqbM5wnUiaFA" />
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
+
+        <!-- Optionally, register AnalyticsReceiver and AnalyticsService to support background
+     dispatching on non-Google Play devices -->
+        <receiver
+            android:name="com.google.android.gms.analytics.AnalyticsReceiver"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.analytics.ANALYTICS_DISPATCH" />
+            </intent-filter>
+        </receiver>
+        <service
+            android:name="com.google.android.gms.analytics.AnalyticsService"
+            android:enabled="true"
+            android:exported="false" />
+        <!-- Optionally, register CampaignTrackingReceiver and CampaignTrackingService to enable
+     installation campaign reporting -->
+        <receiver
+            android:name="com.google.android.gms.analytics.CampaignTrackingReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.android.vending.INSTALL_REFERRER" />
+            </intent-filter>
+        </receiver>
+        <service android:name="com.google.android.gms.analytics.CampaignTrackingService" />
     </application>
 
 </manifest>

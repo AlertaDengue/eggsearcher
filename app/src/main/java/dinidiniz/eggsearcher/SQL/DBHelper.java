@@ -41,6 +41,9 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String SAMPLES_COLUMN_HEIGHT = "height";
     public static final String SAMPLES_COLUMN_RESOLUTIONWIDTH = "resolutionwidth";
     public static final String SAMPLES_COLUMN_RESOLUTIONHEIGHT = "resolutionheight";
+    public static final String SAMPLES_COLUMN_AREABIGGER = "areabigger";
+    public static final String SAMPLES_COLUMN_USERID = "userid";
+    public static final String SAMPLES_COLUMN_USEREMAIL = "useremail";
 
     public static final String CONTOURS_TABLE_NAME = "contours";
     public static final String CONTOURS_COLUMN_ID = "id";
@@ -72,16 +75,27 @@ public class DBHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
 
+        StringBuilder areasStringBuilder = new StringBuilder();
+        for(int thresholdArea=3; thresholdArea <= 30; thresholdArea +=3){
+            areasStringBuilder.append(SAMPLES_COLUMN_AREABIGGER);
+            areasStringBuilder.append(thresholdArea + " integer not null, ");
+        }
+
+
         // TODO Auto-generated method stub
         db.execSQL(
                 "create table if not exists " + SAMPLES_TABLE_NAME + "(" + SAMPLES_COLUMN_ID
-                        + " integer primary key autoincrement, " + SAMPLES_COLUMN_CODE + " text, "
+                        + " integer primary key autoincrement, "
+                        + SAMPLES_COLUMN_USERID+ " text, "
+                        + SAMPLES_COLUMN_USEREMAIL + " text, "
+                        + SAMPLES_COLUMN_CODE + " text, "
                         + SAMPLES_COLUMN_EGGS + " integer not null, "
                         + SAMPLES_COLUMN_RESOLUTIONWIDTH + " integer not null, "
                         + SAMPLES_COLUMN_RESOLUTIONHEIGHT + " integer not null, "
                         + SAMPLES_COLUMN_HEIGHT + " integer not null, "
-                        + SAMPLES_COLUMN_DESCRIPTION
-                        + " text, " + SAMPLES_COLUMN_DATEONFIELD + " datetime, " + SAMPLES_COLUMN_LAT
+                        + areasStringBuilder.toString()
+                        + SAMPLES_COLUMN_DESCRIPTION + " text, "
+                        + SAMPLES_COLUMN_DATEONFIELD + " datetime, " + SAMPLES_COLUMN_LAT
                         + " decimal(9,6), " + SAMPLES_COLUMN_LNG + " decimal(9,6), " + SAMPLES_COLUMN_TOTALAREA
                         + " integer not null, " + SAMPLES_COLUMN_CREATEDAT
                         + " datetime default current_timestamp)"
@@ -116,12 +130,16 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public boolean insertSample(String code, int eggs, String description, double lng, double lat,
                                 long dateOnField, int totalarea, int resolutionHeight,
-                                int resolutionWidth, int height) {
+                                int resolutionWidth, int height, int[] areas, String userId, String userEmail) {
+
+        Log.i(TAG, resolutionWidth + " " + resolutionHeight + "  "  + height);
 
         try {
             SQLiteDatabase db = this.getWritableDatabase();
             ContentValues contentValues = new ContentValues();
             contentValues.put(SAMPLES_COLUMN_CODE, code);
+            contentValues.put(SAMPLES_COLUMN_USERID, userId);
+            contentValues.put(SAMPLES_COLUMN_USEREMAIL, userEmail);
             contentValues.put(SAMPLES_COLUMN_EGGS, eggs);
             contentValues.put(SAMPLES_COLUMN_DESCRIPTION, description);
             contentValues.put(SAMPLES_COLUMN_LAT, lat);
@@ -131,13 +149,18 @@ public class DBHelper extends SQLiteOpenHelper {
             contentValues.put(SAMPLES_COLUMN_HEIGHT, height);
             contentValues.put(SAMPLES_COLUMN_RESOLUTIONHEIGHT, resolutionHeight);
             contentValues.put(SAMPLES_COLUMN_RESOLUTIONWIDTH, resolutionWidth);
+            for(int thresholdArea=3; thresholdArea <= 30; thresholdArea +=3){
+                String areasString = SAMPLES_COLUMN_AREABIGGER + thresholdArea;
+                contentValues.put(areasString, areas[thresholdArea/3 - 1]);
+            }
+
             db.insertOrThrow("SAMPLES", null, contentValues);
             db.close();
         } catch (SQLiteException e){
             Log.i(TAG, "Error in SQLite");
             this.onUpgrade(this.getReadableDatabase(), 1,1);
             this.insertSample(code, eggs, description, lng, lat, dateOnField, totalarea,
-                    resolutionHeight, resolutionWidth, height);
+                    resolutionHeight, resolutionWidth, height, areas, userId, userEmail);
         }
         return true;
     }

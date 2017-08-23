@@ -4,7 +4,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/fundo"
+    android:background="#FFF"
     android:orientation="vertical">
 
     <ScrollView
@@ -27,7 +27,7 @@
                 android:padding="24dp"
                 android:text="Sample number "
                 android:textColor="#000000"
-                android:textSize="28dp"></TextView>
+                android:textSize="28sp"/>
 
             <LinearLayout
                 android:id="@+id/samplesResults"
@@ -48,7 +48,7 @@
                     android:layout_height="wrap_content"
                     android:text="Code:"
                     android:textColor="#000000"
-                    android:textSize="21dp" />
+                    android:textSize="21sp" />
 
                 <EditText
                     android:id="@+id/codeResult"
@@ -58,6 +58,8 @@
                     android:hint="write a code here"
                     android:maxLength="14"
                     android:text=""
+                    android:textColor="#000000"
+                    android:textColorHint="#999"
                     android:textSize="21dp" />
 
             </LinearLayout>
@@ -74,7 +76,7 @@
                     android:layout_height="wrap_content"
                     android:text="Description:"
                     android:textColor="#000000"
-                    android:textSize="21dp" />
+                    android:textSize="21sp" />
 
                 <EditText
                     android:id="@+id/descriptionResult"
@@ -85,8 +87,9 @@
                     android:maxLength="500"
                     android:padding="24dp"
                     android:text=""
-                    android:textColor="#000"
-                    android:textSize="21dp" />
+                    android:textColor="#000000"
+                    android:textColorHint="#999"
+                    android:textSize="21sp" />
             </LinearLayout>
 
 
@@ -144,6 +147,41 @@
 
 
             </LinearLayout>
+
+            <AutoCompleteTextView
+                android:labelFor="@+id/resultadoMapsAutoCompleteTextView"
+                android:id="@+id/resultadoMapsAutoCompleteTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="24dp"
+                android:text=""
+                android:hint="The address here"
+                android:textColorHint="#999"
+                android:background="@drawable/rectangule_background"
+                android:textColor="#000000"
+                android:textSize="21dp"/>
+
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_gravity="center"
+                android:layout_height="wrap_content">
+
+                <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+                    android:id="@+id/map"
+                    android:name="com.google.android.gms.maps.SupportMapFragment"
+                    android:layout_width="300dp"
+                    android:layout_height="300dp"
+                    android:layout_centerInParent="true"
+                    android:layout_marginTop="5dp" />
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginBottom="40dp"
+                    android:src="@drawable/marker_map"
+                    android:layout_centerInParent="true"/>
+
+            </RelativeLayout>
 
         </LinearLayout>
 

@@ -1,7 +1,10 @@
 package dinidiniz.eggsearcher.helper;
 
+import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -16,6 +19,7 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -57,9 +61,13 @@ public class Coordinates implements
     private int height;
     private int resolutionHeight;
     private int resolutionWidth;
+    private int[] areas;
+    private String userId;
+    private String userEmail;
 
     public Coordinates(Context context, String code, int eggs, String description, long date,
-                       int samplenumber, int areatotal, int height, int resolutionHeight, int resolutionWidth) {
+                       int samplenumber, int areatotal, int height, int resolutionHeight,
+                       int resolutionWidth, int[] areas, String userId, String userEmail) {
         this.context = context;
         this.code = code;
         this.eggs = eggs;
@@ -70,6 +78,9 @@ public class Coordinates implements
         this.height = height;
         this.resolutionHeight = resolutionHeight;
         this.resolutionWidth = resolutionWidth;
+        this.areas = areas;
+        this.userId = userId;
+        this.userEmail = userEmail;
 
         if (mGoogleApiClient == null) {
             mGoogleApiClient = new GoogleApiClient.Builder(context)
@@ -114,7 +125,8 @@ public class Coordinates implements
         Log.i(TAG, "lat: " + lat + " ;lng: " + lng);
 
         DBHelper db = new DBHelper(context);
-        db.insertSample(code,eggs,description, lng, lat, date, areatotal, height, resolutionHeight, resolutionWidth);
+        db.insertSample(code,eggs,description, lng, lat, date, areatotal,
+                resolutionHeight, resolutionWidth, height, areas, userId, userEmail);
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
 
         SharedPreferences.Editor editor = sharedPref.edit();

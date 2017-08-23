@@ -47,6 +47,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import javax.microedition.khronos.egl.EGL10;
@@ -92,8 +94,9 @@ public class TelaContagem extends AppCompatActivity {
     double standartDeviationU;
 
 
-    int numberOfEggs = 0;
-    int areaTotal = 0;
+    private int numberOfEggs = 0;
+    private int areaTotal = 0;
+    private int[] areas;
 
     double[] weights = {1, 1, 1, 1};
     private Boolean seletecToUpload = true;
@@ -300,6 +303,7 @@ public class TelaContagem extends AppCompatActivity {
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putInt(Consts.numberOfEggs, numberOfEggs);
         editor.putInt(Consts.areaTotal, areaTotal);
+        editor.putString(Consts.areas, Arrays.toString(areas).split("[\\[\\]]")[1]);
         editor.apply();
     }
 
@@ -702,6 +706,7 @@ public class TelaContagem extends AppCompatActivity {
             List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
             Mat imgMat = new Mat();
             areaTotal = 0;
+            areas = new int[10];
 
             publishProgress("Thresholding");
             Utils.bitmapToMat(bitmap, imgMat);
@@ -728,10 +733,17 @@ public class TelaContagem extends AppCompatActivity {
                 //Mat contour = Imgproc.dilate(cRect);
                 //double contourarea = Imgproc.contourArea(contour);
                 countour.release();
-                if (countourArea > minimumThresholdArea) {
-                    areaTotal += countourArea;
+                for(int thresholdArea=3; thresholdArea <= areas.length*3; thresholdArea +=3){
+                    if (countourArea > thresholdArea) {
+                        areas[thresholdArea/3-1] =  areas[thresholdArea/3-1] + countourArea;
+                    }
                 }
+
             }
+
+            areaTotal = areas[5];
+
+            Log.i(TAG, "areas: " + Arrays.toString(areas));
 
             numberOfEggs = (int) Math.exp(0.5307 * Math.log(areaTotal));
 

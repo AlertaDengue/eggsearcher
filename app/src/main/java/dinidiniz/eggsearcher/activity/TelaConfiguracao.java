@@ -3,11 +3,13 @@ package dinidiniz.eggsearcher.activity;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -15,6 +17,12 @@ import android.widget.CheckBox;
 import android.widget.NumberPicker;
 import android.widget.Spinner;
 import android.widget.TextView;
+
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
 
 import java.util.HashMap;
 import java.util.List;
@@ -55,6 +63,7 @@ public class TelaConfiguracao extends Activity {
     private double[] weights = {0, 0, 0, 0, 0};
     private TextView percentageErrorLogisticTextView;
     private long error;
+    private GoogleApiClient mGoogleApiClient;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -140,8 +149,42 @@ public class TelaConfiguracao extends Activity {
             percentageErrorLogisticTextView.setText("TRAINED");
         }
 
+        //Sign out button
+        Button signOut = (Button) findViewById(R.id.sign_out_button);
+        signOut.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i(TAG, "sign out button");
+                Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(
+                        new ResultCallback<Status>() {
+                            @Override
+                            public void onResult(Status status) {
+                                // [START_EXCLUDE]
+                                //Go to Sign in Activity
+                                Intent intent = new Intent(TelaConfiguracao.this.getApplicationContext(), SignInActivity.class);
+                                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                                startActivity(intent);
+                                // [END_EXCLUDE]
+                            }
+                        });
+            }
+        });
+
 
     }
+
+    @Override
+    protected void onStart() {
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
+                .build();
+        mGoogleApiClient.connect();
+        super.onStart();
+    }
+
 
     public void deleteTrainningButton(View view) {
         dbHelper.deleteAllPixelsFromTable(DBHelper.PIXEL_TABLE_NAME);
@@ -173,7 +216,7 @@ public class TelaConfiguracao extends Activity {
         editor.putLong(WEIGHT_LOGISTIC_B, Double.doubleToRawLongBits(weights[2]));
         editor.putLong(WEIGHT_LOGISTIC_GRAY, Double.doubleToRawLongBits(weights[3]));
         editor.putLong("error", error);
-        editor.commit();
+        editor.apply();
     }
 
     public void loadScreen() {

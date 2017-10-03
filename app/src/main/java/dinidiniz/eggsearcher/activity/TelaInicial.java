@@ -26,6 +26,7 @@ import android.widget.Toast;
 
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.Tracker;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -64,6 +65,8 @@ public class TelaInicial extends AppCompatActivity {
         mTracker.send(new HitBuilders.ScreenViewBuilder().build());
 
         askPermissions();
+
+        saveUserData();
     }
 
     /**
@@ -200,4 +203,17 @@ public class TelaInicial extends AppCompatActivity {
         editor.putString("imagepath", getFileStreamPath("tempIMG.png").getAbsolutePath());
         editor.commit();
     }
+
+    public void saveUserData(){
+        //Save user data;
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(Consts.user_email, "email");
+        editor.putString(Consts.user_id, "id");
+        editor.putString(Consts.user_name, "name");
+        editor.putString(Consts.user_familyname, "family name");
+        editor.putString(Consts.user_photourl, "photo");
+        editor.apply();
+    }
+
 }

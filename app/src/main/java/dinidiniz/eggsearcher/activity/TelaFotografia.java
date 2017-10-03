@@ -421,7 +421,7 @@ public class TelaFotografia extends AppCompatActivity {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         namePhotoSpinnerSelected = sharedPref.getInt(Consts.namePhotoSpinnerSelected, 0);
         processSpinnerSelected = sharedPref.getInt("processSpinnerSelected", 0);
-        resolutionSpinnerSelected = sharedPref.getInt("resolutionSpinnerSelected", 0);
+        resolutionSpinnerSelected = sharedPref.getInt(Consts.resolutionSpinnerSelected, 0);
         heightFromLentsNumberPickerSelected = sharedPref.getInt(Consts.heightFromLentsNumberPickerSelected, Consts.ORIGINAL_heightFromLentsNumberPickerSelected);
 
         photoAreaSpinnerSelected = sharedPref.getInt("photoAreaSpinnerSelected", 0);

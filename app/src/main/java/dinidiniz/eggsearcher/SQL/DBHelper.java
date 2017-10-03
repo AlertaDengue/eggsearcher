@@ -39,8 +39,7 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String SAMPLES_COLUMN_DESCRIPTION = "description";
     public static final String SAMPLES_COLUMN_TOTALAREA = "totalarea";
     public static final String SAMPLES_COLUMN_HEIGHT = "height";
-    public static final String SAMPLES_COLUMN_RESOLUTIONWIDTH = "resolutionwidth";
-    public static final String SAMPLES_COLUMN_RESOLUTIONHEIGHT = "resolutionheight";
+    public static final String SAMPLES_COLUMN_MP = "mp";
     public static final String SAMPLES_COLUMN_AREABIGGER = "areabigger";
     public static final String SAMPLES_COLUMN_USERID = "userid";
     public static final String SAMPLES_COLUMN_USEREMAIL = "useremail";
@@ -90,8 +89,7 @@ public class DBHelper extends SQLiteOpenHelper {
                         + SAMPLES_COLUMN_USEREMAIL + " text, "
                         + SAMPLES_COLUMN_CODE + " text, "
                         + SAMPLES_COLUMN_EGGS + " integer not null, "
-                        + SAMPLES_COLUMN_RESOLUTIONWIDTH + " integer not null, "
-                        + SAMPLES_COLUMN_RESOLUTIONHEIGHT + " integer not null, "
+                        + SAMPLES_COLUMN_MP + " integer not null, "
                         + SAMPLES_COLUMN_HEIGHT + " integer not null, "
                         + areasStringBuilder.toString()
                         + SAMPLES_COLUMN_DESCRIPTION + " text, "
@@ -129,10 +127,10 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public boolean insertSample(String code, int eggs, String description, double lng, double lat,
-                                long dateOnField, int totalarea, int resolutionHeight,
-                                int resolutionWidth, int height, int[] areas, String userId, String userEmail) {
+                                long dateOnField, int totalarea, int mp,
+                                int height, int[] areas, String userId, String userEmail) {
 
-        Log.i(TAG, resolutionWidth + " " + resolutionHeight + "  "  + height);
+        Log.i(TAG, mp + "  "  + height);
 
         try {
             SQLiteDatabase db = this.getWritableDatabase();
@@ -147,8 +145,7 @@ public class DBHelper extends SQLiteOpenHelper {
             contentValues.put(SAMPLES_COLUMN_DATEONFIELD, dateOnField);
             contentValues.put(SAMPLES_COLUMN_TOTALAREA, totalarea);
             contentValues.put(SAMPLES_COLUMN_HEIGHT, height);
-            contentValues.put(SAMPLES_COLUMN_RESOLUTIONHEIGHT, resolutionHeight);
-            contentValues.put(SAMPLES_COLUMN_RESOLUTIONWIDTH, resolutionWidth);
+            contentValues.put(SAMPLES_COLUMN_MP, mp);
             for(int thresholdArea=3; thresholdArea <= 30; thresholdArea +=3){
                 String areasString = SAMPLES_COLUMN_AREABIGGER + thresholdArea;
                 contentValues.put(areasString, areas[thresholdArea/3 - 1]);
@@ -160,7 +157,7 @@ public class DBHelper extends SQLiteOpenHelper {
             Log.i(TAG, "Error in SQLite");
             this.onUpgrade(this.getReadableDatabase(), 1,1);
             this.insertSample(code, eggs, description, lng, lat, dateOnField, totalarea,
-                    resolutionHeight, resolutionWidth, height, areas, userId, userEmail);
+                    mp, height, areas, userId, userEmail);
         }
         return true;
     }

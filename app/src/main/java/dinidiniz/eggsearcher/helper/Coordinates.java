@@ -59,15 +59,14 @@ public class Coordinates implements
     private int sampleNumber;
     private int areatotal;
     private int height;
-    private int resolutionHeight;
-    private int resolutionWidth;
+    private int mp;
     private int[] areas;
     private String userId;
     private String userEmail;
 
     public Coordinates(Context context, String code, int eggs, String description, long date,
-                       int samplenumber, int areatotal, int height, int resolutionHeight,
-                       int resolutionWidth, int[] areas, String userId, String userEmail) {
+                       int samplenumber, int areatotal, int height, int mp,
+                       int[] areas, String userId, String userEmail) {
         this.context = context;
         this.code = code;
         this.eggs = eggs;
@@ -76,8 +75,7 @@ public class Coordinates implements
         this.sampleNumber = samplenumber;
         this.areatotal = areatotal;
         this.height = height;
-        this.resolutionHeight = resolutionHeight;
-        this.resolutionWidth = resolutionWidth;
+        this.mp = mp;
         this.areas = areas;
         this.userId = userId;
         this.userEmail = userEmail;
@@ -105,9 +103,12 @@ public class Coordinates implements
         //Make Request to make sure Google api have last location
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
         */
-
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
         Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
                 mGoogleApiClient);
+
 
         if (mLastLocation != null) {
             lat = mLastLocation.getLatitude();
@@ -125,8 +126,8 @@ public class Coordinates implements
         Log.i(TAG, "lat: " + lat + " ;lng: " + lng);
 
         DBHelper db = new DBHelper(context);
-        db.insertSample(code,eggs,description, lng, lat, date, areatotal,
-                resolutionHeight, resolutionWidth, height, areas, userId, userEmail);
+        db.insertSample(code, eggs, description, lng, lat, date, areatotal,
+                mp, height, areas, userId, userEmail);
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
 
         SharedPreferences.Editor editor = sharedPref.edit();

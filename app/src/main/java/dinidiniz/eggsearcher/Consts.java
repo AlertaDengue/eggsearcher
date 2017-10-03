@@ -17,6 +17,7 @@ public class Consts {
     public final static String numberOfEggs = "numberOfEggs";
     public final static String areaTotal = "areaTotal";
     public final static String namePhotoSpinnerSelected = "namePhotoSpinnerSelected";
+    public final static String resolutionSpinnerSelected = "resolutionSpinnerSelected";
     public final static String sampleNumber = "sampleNumber";
     public final static String areas = "areas";
     public final static String result_date = "resultDate";

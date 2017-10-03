@@ -13,11 +13,7 @@
       },
       "oauth_client": [
         {
-          "client_id": "821907576846-tjt1u76kfptpiurkiahoful2tg0khaq2.apps.googleusercontent.com",
-          "client_type": 3
-        },
-        {
-          "client_id": "821907576846-6nifsc0i24gfbvgbar97ndjaq3bdt3k5.apps.googleusercontent.com",
+          "client_id": "821907576846-i7oo0rb4f79bi4ha47jojn1p9ttkjklv.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "dinidiniz.eggsearcher",
@@ -25,12 +21,16 @@
           }
         },
         {
-          "client_id": "821907576846-qeg6qhs7m2srtm2dj7gj48bu6q0mh236.apps.googleusercontent.com",
+          "client_id": "821907576846-lt9f3kl5f1tsvk32v2ghej3olc5674fi.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "dinidiniz.eggsearcher",
             "certificate_hash": "b7398cdcc82f38baa57b67b6a194e1c6ab6f9e41"
           }
+        },
+        {
+          "client_id": "821907576846-tjt1u76kfptpiurkiahoful2tg0khaq2.apps.googleusercontent.com",
+          "client_type": 3
         }
       ],
       "api_key": [

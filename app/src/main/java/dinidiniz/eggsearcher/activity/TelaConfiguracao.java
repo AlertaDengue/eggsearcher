@@ -18,6 +18,8 @@ import android.widget.NumberPicker;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.Tracker;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -27,6 +29,7 @@ import com.google.android.gms.common.api.Status;
 import java.util.HashMap;
 import java.util.List;
 
+import dinidiniz.eggsearcher.App;
 import dinidiniz.eggsearcher.Consts;
 import dinidiniz.eggsearcher.R;
 import dinidiniz.eggsearcher.SQL.DBHelper;
@@ -64,6 +67,7 @@ public class TelaConfiguracao extends Activity {
     private TextView percentageErrorLogisticTextView;
     private long error;
     private GoogleApiClient mGoogleApiClient;
+    private Tracker mTracker;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,6 +77,13 @@ public class TelaConfiguracao extends Activity {
         loadScreen();
 
         res = getResources();
+
+        // Obtain the shared Tracker instance.
+        App application = (App) getApplication();
+        mTracker = application.getDefaultTracker();
+
+        mTracker.setScreenName(TAG);
+        mTracker.send(new HitBuilders.ScreenViewBuilder().build());
 
         //THRESHOLD SPINNER
         thresholdSpinner = (Spinner) findViewById(R.id.thresholdSpinner);

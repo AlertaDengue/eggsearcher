@@ -33,10 +33,12 @@ import com.google.android.gms.maps.model.LatLng;
 
 import java.util.Calendar;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import dinidiniz.eggsearcher.Consts;
 import dinidiniz.eggsearcher.R;
+import dinidiniz.eggsearcher.functions.CameraPreview;
 import dinidiniz.eggsearcher.helper.Coordinates;
 
 /**
@@ -55,6 +57,8 @@ public class TelaResultado extends AppCompatActivity implements
     private long dateOnField;
     private int resolutionHeight = 0;
     private int resolutionWidth = 0;
+    private int resolutionSpinnerSelected = 0;
+    private int MP = 0;
     private int height = 0;
     private String userId;
     private String userEmail;
@@ -206,6 +210,8 @@ public class TelaResultado extends AppCompatActivity implements
         userEmail = sharedPref.getString(Consts.user_email, "");
         areasString = sharedPref.getString(Consts.areas, "0");
         areas = stringArrToIntArr(areasString.split(", "));
+        height = sharedPref.getInt(Consts.heightFromLentsNumberPickerSelected, Consts.ORIGINAL_heightFromLentsNumberPickerSelected);
+        resolutionSpinnerSelected = sharedPref.getInt(Consts.resolutionSpinnerSelected, 0);
         dateOnField = sharedPref.getLong(Consts.result_date, Calendar.getInstance().getTimeInMillis());
         numberOfEggsSamples = sharedPref.getStringSet("numberOfEggsSamples", numberOfEggsSamples);
         if (numberOfEggsSamples.size() == 1) {
@@ -217,18 +223,20 @@ public class TelaResultado extends AppCompatActivity implements
     }
 
     private void getHeightAndMP(String filePath) {
-        String fileName = filePath.split("/")[filePath.split("/").length - 1];
-        String[] fileInfos = fileName.split("_");
-        Log.i(TAG, fileName + " lenght: " + fileInfos.length);
-        if (fileInfos.length == 6) {
-            try {
+        try {
+            String fileName = filePath.split("/")[filePath.split("/").length - 1];
+            String[] fileInfos = fileName.split("_");
+            Log.i(TAG, fileName + " lenght: " + fileInfos.length);
+            if (fileInfos.length == 6) {
                 Log.i(TAG, "parse: " + Integer.parseInt(fileInfos[2]));
                 height = Integer.parseInt(fileInfos[3]);
                 resolutionHeight = Integer.parseInt(fileInfos[1]);
                 resolutionWidth = Integer.parseInt(fileInfos[2]);
-            } catch (Exception e) {
-                Log.i(TAG, e.getMessage());
+                MP = resolutionHeight*resolutionWidth / 1024000;
             }
+        } catch (Exception e){
+            List<String> resolutionSpinnerList = CameraPreview.getCameraResolutionList();
+            MP = Integer.parseInt(resolutionSpinnerList.get(resolutionSpinnerSelected));
         }
 
 
@@ -264,8 +272,7 @@ public class TelaResultado extends AppCompatActivity implements
     public void getCoordinates() {
         new Coordinates(this, codeResult.getText().toString(),
                 totalNumberOfEggsView.getValue(), descriptionResult.getText().toString(),
-                dateOnField, sampleNumber, areaTotal, height, resolutionHeight,
-                resolutionWidth, areas, userId, userEmail);
+                dateOnField, sampleNumber, areaTotal, height, MP, areas, userId, userEmail);
     }
 
     public void saveResult(View view) {
